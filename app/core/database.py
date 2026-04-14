@@ -68,7 +68,8 @@ async def get_tenant_db(schema_name: str) -> AsyncSession:
 
 async def get_alif24_db() -> Optional[AsyncSession]:
     if Alif24SessionLocal is None:
-        return None
+        yield None
+        return
     async with Alif24SessionLocal() as session:
         try:
             yield session
