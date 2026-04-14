@@ -7,7 +7,7 @@ from app.core.dependencies import get_db, get_current_user
 from app.core.rbac import require_role
 from app.core.exceptions import NotFoundError
 
-router = APIRouter(prefix="/psychology", tags=["Psychology"])
+router = APIRouter(tags=["Psychology"])
 
 
 # --- Psychological Tests ---

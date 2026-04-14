@@ -7,7 +7,7 @@ from app.core.dependencies import get_db, get_current_user
 from app.core.rbac import require_permission
 from app.core.exceptions import NotFoundError, ConflictError
 
-router = APIRouter(prefix="/schedules", tags=["Schedules"])
+router = APIRouter(tags=["Schedules"])
 
 SCHEDULE_SELECT = """
     SELECT sc.id, sc.day_of_week, sc.start_time, sc.end_time,

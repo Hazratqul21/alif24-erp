@@ -7,7 +7,7 @@ from app.core.dependencies import get_db, get_current_user
 from app.core.rbac import require_permission
 from app.core.exceptions import NotFoundError
 
-router = APIRouter(prefix="/grades", tags=["Grades"])
+router = APIRouter(tags=["Grades"])
 
 
 @router.post("/", status_code=201)

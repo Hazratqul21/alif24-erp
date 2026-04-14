@@ -26,7 +26,7 @@ from app.services.alif24_integration import (
     bulk_import_students_from_alif24,
 )
 
-router = APIRouter(prefix="/alif24", tags=["Alif24 Integration"])
+router = APIRouter(tags=["Alif24 Integration"])
 
 
 @router.get("/lookup/{alif24_id}")

@@ -21,7 +21,7 @@ from app.schemas.user import (
     UserListResponse,
 )
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(tags=["Users"])
 
 
 def _build_user_response(row, roles: list[str]) -> UserResponse:

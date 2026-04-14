@@ -6,7 +6,7 @@ from app.core.dependencies import get_public_db, get_current_user
 from app.core.rbac import require_role
 from app.core.exceptions import NotFoundError
 
-router = APIRouter(prefix="/superadmin/monitoring", tags=["SuperAdmin - Monitoring"])
+router = APIRouter(tags=["SuperAdmin - Monitoring"])
 
 
 @router.get("/stats")

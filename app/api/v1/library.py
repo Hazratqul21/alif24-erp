@@ -7,7 +7,7 @@ from app.core.dependencies import get_db, get_current_user, get_alif24_db
 from app.core.rbac import require_permission
 from app.core.exceptions import NotFoundError, AppError
 
-router = APIRouter(prefix="/library", tags=["Library"])
+router = APIRouter(tags=["Library"])
 
 
 @router.get("/books")

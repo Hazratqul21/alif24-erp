@@ -6,7 +6,7 @@ from typing import Optional
 from app.core.dependencies import get_db, get_current_user
 from app.core.rbac import require_role
 
-router = APIRouter(prefix="/audit", tags=["Audit"])
+router = APIRouter(tags=["Audit"])
 
 
 @router.get("/logs")

@@ -38,7 +38,7 @@ from app.schemas.auth import (
 )
 from app.config import settings
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 
 OTP_TTL_SECONDS = 300
 

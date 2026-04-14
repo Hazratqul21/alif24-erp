@@ -7,7 +7,7 @@ from app.core.dependencies import get_db, get_current_user
 from app.core.rbac import require_permission
 from app.core.exceptions import NotFoundError, ConflictError
 
-router = APIRouter(prefix="/rooms", tags=["Rooms"])
+router = APIRouter(tags=["Rooms"])
 
 
 @router.get("/")
