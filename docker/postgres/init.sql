@@ -1,0 +1,4 @@
+CREATE DATABASE alif24_erp;
+\c alif24_erp;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";

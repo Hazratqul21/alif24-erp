@@ -1,0 +1,75 @@
+# Alif24 School ERP — Server deployment
+# Uses existing alif-24 PostgreSQL, Redis, and Nginx
+# Place this project at ~/alif24-erp alongside ~/alif-24
+
+services:
+  erp-backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: erp-backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@alif24-postgres:5432/alif24_erp
+      - ALIF24_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@alif24-postgres:5432/${POSTGRES_DB:-alif24}
+      - REDIS_URL=redis://alif24-redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://erp.alif24.uz}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=false
+      - BASE_DOMAIN=alif24.uz
+      - ESKIZ_EMAIL=${ESKIZ_EMAIL:-}
+      - ESKIZ_PASSWORD=${ESKIZ_PASSWORD:-}
+      - PAYME_MERCHANT_ID=${PAYME_MERCHANT_ID:-}
+      - PAYME_SECRET_KEY=${PAYME_SECRET_KEY:-}
+      - CLICK_MERCHANT_ID=${CLICK_MERCHANT_ID:-}
+      - CLICK_SERVICE_ID=${CLICK_SERVICE_ID:-}
+      - CLICK_SECRET_KEY=${CLICK_SECRET_KEY:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SUPER_ADMIN_EMAIL=${SUPER_ADMIN_EMAIL:-admin@alif24.uz}
+      - SUPER_ADMIN_PASSWORD=${SUPER_ADMIN_PASSWORD:-}
+    volumes:
+      - /data/erp-uploads:/data/uploads
+    ports:
+      - "127.0.0.1:8010:8000"
+    networks:
+      - alif24-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  erp-worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: erp-worker
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@alif24-postgres:5432/alif24_erp
+      - ALIF24_DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@alif24-postgres:5432/${POSTGRES_DB:-alif24}
+      - REDIS_URL=redis://alif24-redis:6379/1
+      - ESKIZ_EMAIL=${ESKIZ_EMAIL:-}
+      - ESKIZ_PASSWORD=${ESKIZ_PASSWORD:-}
+    volumes:
+      - /data/erp-uploads:/data/uploads
+    networks:
+      - alif24-network
+
+  erp-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp-frontend
+    restart: always
+    ports:
+      - "127.0.0.1:5180:80"
+    networks:
+      - alif24-network
+
+networks:
+  alif24-network:
+    external: true
+    name: alif-24_alif24-network
