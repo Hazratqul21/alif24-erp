@@ -75,6 +75,32 @@ async def get_current_user(
     if not user_id:
         raise UnauthorizedError()
 
+    # Super Admin (token sub = "sa_<id>")
+    if str(user_id).startswith("sa_"):
+        sa_id = int(str(user_id).replace("sa_", ""))
+        sa_result = await db.execute(
+            text("SELECT id, email, first_name, last_name, is_active FROM public.super_admins WHERE id = :uid"),
+            {"uid": sa_id},
+        )
+        sa_row = sa_result.fetchone()
+        if not sa_row:
+            raise UnauthorizedError("Super Admin topilmadi")
+        if not sa_row[4]:
+            raise UnauthorizedError("Hisob faol emas")
+
+        return {
+            "id": user_id,
+            "email": sa_row[1],
+            "phone": None,
+            "first_name": sa_row[2] or "Super",
+            "last_name": sa_row[3] or "Admin",
+            "is_active": sa_row[4],
+            "roles": ["superadmin"],
+            "permissions": [{"module": "*", "action": "*"}],
+            "tenant_id": None,
+        }
+
+    # Tenant user
     result = await db.execute(
         text("SELECT id, email, phone, first_name, last_name, is_active FROM users WHERE id = :uid"),
         {"uid": user_id},

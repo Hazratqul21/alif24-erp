@@ -275,6 +275,25 @@ async def get_me(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
+    # Super Admin
+    if str(current_user["id"]).startswith("sa_"):
+        return UserProfile(
+            id=current_user["id"],
+            email=current_user["email"],
+            phone=None,
+            first_name=current_user["first_name"],
+            last_name=current_user["last_name"],
+            middle_name=None,
+            birth_date=None,
+            gender=None,
+            avatar=None,
+            is_active=True,
+            totp_enabled=False,
+            last_login=None,
+            created_at=None,
+            roles=["superadmin"],
+        )
+
     result = await db.execute(
         text("""
             SELECT id, email, phone, first_name, last_name, middle_name,

@@ -14,7 +14,7 @@ function extractSubdomain() {
   // e.g. school1.alif24.uz -> school1
   if (parts.length >= 3) {
     const sub = parts[0];
-    if (sub === 'www' || sub === 'app' || sub === 'admin') {
+    if (sub === 'www' || sub === 'app' || sub === 'admin' || sub === 'erp') {
       return null;
     }
     return sub;
