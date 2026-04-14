@@ -46,11 +46,67 @@ OTP_TTL_SECONDS = 300
 @router.post("/login", response_model=LoginResponse)
 async def login(
     body: LoginRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     identifier = body.email_or_phone.strip()
+    is_superadmin_domain = getattr(request.state, "is_superadmin", False)
+    schema = getattr(request.state, "schema_name", "public")
 
+    # Super Admin login (erp.alif24.uz — tenant yo'q)
+    if schema == "public" or is_superadmin_domain:
+        sa_result = await db.execute(
+            text("""
+                SELECT id, email, password_hash, first_name, last_name, is_active
+                FROM public.super_admins
+                WHERE email = :ident AND is_active = true
+                LIMIT 1
+            """),
+            {"ident": identifier},
+        )
+        sa_row = sa_result.fetchone()
+
+        if sa_row:
+            if not verify_password(body.password, sa_row[2]):
+                raise UnauthorizedError("Parol noto'g'ri")
+
+            sa_id = f"sa_{sa_row[0]}"
+            roles = ["superadmin"]
+
+            token_data = {"sub": sa_id, "email": sa_row[1], "roles": roles}
+            access_token = create_access_token(token_data)
+            refresh_token = create_refresh_token(token_data)
+
+            await db.execute(
+                text("UPDATE public.super_admins SET last_login = :now WHERE id = :uid"),
+                {"now": datetime.now(timezone.utc), "uid": sa_row[0]},
+            )
+            await db.commit()
+
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=settings.APP_ENV != "development",
+                samesite="lax",
+                max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            )
+
+            return LoginResponse(
+                access_token=access_token,
+                refresh_token=refresh_token,
+                user=UserInfo(
+                    id=sa_id,
+                    email=sa_row[1],
+                    phone=None,
+                    first_name=sa_row[3] or "Super",
+                    last_name=sa_row[4] or "Admin",
+                    roles=roles,
+                ),
+            )
+
+    # Tenant user login (school1.erp.alif24.uz)
     result = await db.execute(
         text("""
             SELECT id, email, phone, first_name, last_name,

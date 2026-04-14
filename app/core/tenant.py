@@ -11,7 +11,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-SUPERADMIN_SUBDOMAINS = {"admin"}
+SUPERADMIN_SUBDOMAINS = {"admin", "erp"}
 PUBLIC_PATHS = {"/api/v1/auth/login", "/api/v1/auth/refresh", "/health", "/", "/docs", "/openapi.json", "/redoc"}
 
 
