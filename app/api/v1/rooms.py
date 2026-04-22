@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError, ConflictError
 router = APIRouter(tags=["Rooms"])
 
 
-@router.get(""))
+@router.get("")
 @require_permission("rooms", "read")
 async def list_rooms(
     room_type: Optional[str] = None,
@@ -31,7 +31,7 @@ async def list_rooms(
     return {"items": [dict(r._mapping) for r in rows]}
 
 
-@router.post(""), status_code=201)
+@router.post("", status_code=201)
 @require_permission("rooms", "create")
 async def create_room(
     data: dict,

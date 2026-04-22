@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Admissions"])
 
 
-@router.post(""), status_code=201)
+@router.post("", status_code=201)
 @require_permission("admissions", "create")
 async def submit_application(
     data: dict,
@@ -43,7 +43,7 @@ async def submit_application(
     return {"id": row.scalar(), "message": "Ariza qabul qilindi"}
 
 
-@router.get(""))
+@router.get("")
 @require_permission("admissions", "read")
 async def list_applications(
     page: int = Query(1, ge=1),

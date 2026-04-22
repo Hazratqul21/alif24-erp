@@ -9,7 +9,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["SuperAdmin - Plans"])
 
 
-@router.get(""))
+@router.get("/")
 @require_role("super_admin")
 async def list_plans(
     current_user: dict = Depends(get_current_user),
@@ -26,7 +26,7 @@ async def list_plans(
     return {"items": [dict(r._mapping) for r in rows]}
 
 
-@router.post(""), status_code=201)
+@router.post("/", status_code=201)
 @require_role("super_admin")
 async def create_plan(
     data: dict,

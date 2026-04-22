@@ -16,7 +16,7 @@ ALLOWED_TYPES = {
 MAX_SIZE_MB = 20
 
 
-@router.post(""))
+@router.post("/")
 async def upload_file(
     file: UploadFile = File(...),
     current_user: dict = Depends(get_current_user),

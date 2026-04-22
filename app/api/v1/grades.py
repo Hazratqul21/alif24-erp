@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Grades"])
 
 
-@router.post(""), status_code=201)
+@router.post("/", status_code=201)
 @require_permission("grades", "create")
 async def enter_grade(
     data: dict,

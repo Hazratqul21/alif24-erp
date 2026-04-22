@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Notifications"])
 
 
-@router.get(""))
+@router.get("")
 async def list_notifications(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -32,7 +32,7 @@ async def list_notifications(
     return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page}
 
 
-@router.post(""), status_code=201)
+@router.post("", status_code=201)
 @require_permission("notifications", "create")
 async def create_notification(
     data: dict,

@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Parents"])
 
 
-@router.get(""))
+@router.get("")
 @require_permission("parents", "read")
 async def list_parents(
     page: int = Query(1, ge=1),
@@ -34,7 +34,7 @@ async def list_parents(
     return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page, "per_page": per_page}
 
 
-@router.post(""), status_code=201)
+@router.post("", status_code=201)
 @require_permission("parents", "create")
 async def create_parent(
     data: dict,

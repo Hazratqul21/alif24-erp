@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Homework"])
 
 
-@router.get(""))
+@router.get("")
 @require_permission("homework", "read")
 async def list_homework(
     page: int = Query(1, ge=1),
@@ -46,7 +46,7 @@ async def list_homework(
     return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page}
 
 
-@router.post(""), status_code=201)
+@router.post("", status_code=201)
 @require_permission("homework", "create")
 async def create_homework(
     data: dict,
