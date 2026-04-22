@@ -25,7 +25,7 @@ export default function LoginPage() {
     try {
       const user = await login(emailOrPhone, password);
       toast.success(t('login_success'));
-      const roles = (user.roles || [user.role]).filter(Boolean).map(r => r.toLowerCase());
+      const roles = (user?.roles || [user?.role]).filter(Boolean).map(r => r.toLowerCase());
       const role = roles[0];
       const roleRoutes = {
         super_admin: '/superadmin',
@@ -44,9 +44,13 @@ export default function LoginPage() {
         it_admin: '/it-admin',
         psychologist: '/psychologist',
       };
-      navigate(roleRoutes[role] || '/');
-    } catch {
-      toast.error(t('login_error'));
+      const target = roleRoutes[role] || '/';
+      // Allow React to flush the auth state before navigation
+      setTimeout(() => navigate(target, { replace: true }), 50);
+    } catch (err) {
+      console.error('Login error:', err);
+      const serverMsg = err?.response?.data?.detail || err?.response?.data?.message;
+      toast.error(serverMsg || t('login_error'));
     } finally {
       setLoading(false);
     }

@@ -315,7 +315,7 @@ async def get_me(
             totp_enabled=False,
             last_login=None,
             created_at=None,
-            roles=["superadmin"],
+            roles=current_user.get("roles", ["super_admin"]),
         )
 
     result = await db.execute(

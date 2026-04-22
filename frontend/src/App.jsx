@@ -121,8 +121,9 @@ function DashboardPlaceholder({ role }) {
 // --- Protected Route Wrapper ---
 function ProtectedRoute({ allowedRoles }) {
   const { user, loading, isAuthenticated } = useAuth();
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
 
-  if (loading) {
+  if (loading || (hasToken && !user)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
@@ -139,7 +140,16 @@ function ProtectedRoute({ allowedRoles }) {
     const hasRole = allowedRoles.some(r => userRoles.includes(r));
     if (!hasRole) {
       const primaryRole = userRoles[0];
-      return <Navigate to={`/${primaryRole}`} replace />;
+      if (!primaryRole) {
+        return <Navigate to="/login" replace />;
+      }
+      const fallbackRoutes = {
+        super_admin: '/superadmin',
+        superadmin: '/superadmin',
+        deputy_director: '/deputy-director',
+        it_admin: '/it-admin',
+      };
+      return <Navigate to={fallbackRoutes[primaryRole] || `/${primaryRole}`} replace />;
     }
   }
 
@@ -149,8 +159,9 @@ function ProtectedRoute({ allowedRoles }) {
 // --- Role-based redirect after login ---
 function RoleRedirect() {
   const { user, loading } = useAuth();
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
 
-  if (loading) {
+  if (loading || (hasToken && !user)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
