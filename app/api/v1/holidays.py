@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Holidays"])
 
 
-@router.get("/")
+@router.get(""))
 @require_permission("holidays", "read")
 async def list_holidays(
     year: Optional[int] = None,
@@ -31,7 +31,7 @@ async def list_holidays(
     return {"items": [dict(r._mapping) for r in rows]}
 
 
-@router.post("/", status_code=201)
+@router.post(""), status_code=201)
 @require_permission("holidays", "create")
 async def create_holiday(
     data: dict,

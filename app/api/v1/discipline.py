@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Discipline"])
 
 
-@router.get("/")
+@router.get(""))
 @require_permission("discipline", "read")
 async def list_incidents(
     page: int = Query(1, ge=1),
@@ -37,7 +37,7 @@ async def list_incidents(
     return {"items": [dict(r._mapping) for r in rows]}
 
 
-@router.post("/", status_code=201)
+@router.post(""), status_code=201)
 @require_permission("discipline", "create")
 async def create_incident(
     data: dict,

@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError, AppError
 router = APIRouter(tags=["SuperAdmin - Tenants"])
 
 
-@router.get("/")
+@router.get("")
 @require_role("super_admin")
 async def list_tenants(
     page: int = Query(1, ge=1),
@@ -21,7 +21,7 @@ async def list_tenants(
     db: AsyncSession = Depends(get_public_db),
 ):
     params: dict = {"limit": per_page, "offset": (page - 1) * per_page}
-    conditions = []
+    conditions = ["t.deleted_at IS NULL"]
     if search:
         conditions.append("(t.name ILIKE :search OR t.domain ILIKE :search)")
         params["search"] = f"%{search}%"
@@ -29,20 +29,33 @@ async def list_tenants(
         conditions.append("t.is_active = :is_active")
         params["is_active"] = is_active
 
-    where = "WHERE " + " AND ".join(conditions) if conditions else ""
+    where = "WHERE " + " AND ".join(conditions)
     total = (await db.execute(text(f"SELECT COUNT(*) FROM tenants t {where}"), params)).scalar()
 
     rows = await db.execute(text(f"""
         SELECT t.id, t.name, t.domain, t.schema_name, t.is_active, t.is_blocked,
-               t.plan_id, t.subscription_end, t.created_at,
-               (SELECT COUNT(*) FROM {'{'}t.schema_name{'}'}.users) as user_count
+               t.plan_id, t.subscription_end, t.created_at
         FROM tenants t {where}
         ORDER BY t.created_at DESC LIMIT :limit OFFSET :offset
     """), params)
-    return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page}
+    items = [dict(r._mapping) for r in rows]
+
+    # user_count: get per-schema counts safely (skip schemas that don't exist yet)
+    for item in items:
+        schema = item.get("schema_name")
+        if not schema or not schema.replace("_", "").isalnum():
+            item["user_count"] = 0
+            continue
+        try:
+            cnt = (await db.execute(text(f"SELECT COUNT(*) FROM {schema}.users"))).scalar()
+            item["user_count"] = cnt or 0
+        except Exception:
+            item["user_count"] = 0
+
+    return {"items": items, "total": total, "page": page, "per_page": per_page}
 
 
-@router.post("/", status_code=201)
+@router.post("", status_code=201)
 @require_role("super_admin")
 async def create_tenant(
     data: dict,

@@ -50,6 +50,7 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(
@@ -70,8 +71,13 @@ async def app_error_handler(request: Request, exc: AppError):
 
 @app.exception_handler(Exception)
 async def generic_error_handler(request: Request, exc: Exception):
-    logger.exception(f"Kutilmagan xatolik: {exc}")
-    return JSONResponse(status_code=500, content={"detail": "Ichki server xatosi"})
+    logger.exception(
+        "Unhandled error on %s %s: %s", request.method, request.url.path, exc,
+    )
+    detail = "Ichki server xatosi"
+    if settings.APP_DEBUG:
+        detail = f"{type(exc).__name__}: {exc}"
+    return JSONResponse(status_code=500, content={"detail": detail})
 
 
 PREFIX = settings.API_PREFIX

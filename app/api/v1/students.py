@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError, AppError
 router = APIRouter(tags=["Students"])
 
 
-@router.get("/")
+@router.get(""))
 @require_permission("students", "read")
 async def list_students(
     page: int = Query(1, ge=1),
@@ -52,7 +52,7 @@ async def list_students(
     return {"items": items, "total": total, "page": page, "per_page": per_page}
 
 
-@router.post("/", status_code=201)
+@router.post(""), status_code=201)
 @require_permission("students", "create")
 async def create_student(
     data: dict,

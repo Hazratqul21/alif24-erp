@@ -10,7 +10,7 @@ from app.core.exceptions import NotFoundError
 router = APIRouter(tags=["Competitions"])
 
 
-@router.get("/")
+@router.get(""))
 @require_permission("competitions", "read")
 async def list_competitions(
     page: int = Query(1, ge=1),
@@ -36,7 +36,7 @@ async def list_competitions(
     return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page}
 
 
-@router.post("/", status_code=201)
+@router.post(""), status_code=201)
 @require_permission("competitions", "create")
 async def create_competition(
     data: dict,

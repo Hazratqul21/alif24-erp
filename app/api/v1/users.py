@@ -53,7 +53,7 @@ async def _get_user_roles(db: AsyncSession, user_id: str) -> list[str]:
     return [row[0] for row in result]
 
 
-@router.get("/", response_model=UserListResponse)
+@router.get(""), response_model=UserListResponse)
 async def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -129,7 +129,7 @@ async def list_users(
     )
 
 
-@router.post("/", response_model=UserResponse, status_code=201)
+@router.post(""), response_model=UserResponse, status_code=201)
 async def create_user(
     body: UserCreate,
     db: AsyncSession = Depends(get_db),

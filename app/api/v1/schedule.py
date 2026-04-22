@@ -84,7 +84,7 @@ async def today_schedule(
     return {"date": str(date.today()), "day_of_week": dow, "schedule": [dict(r._mapping) for r in rows]}
 
 
-@router.post("/", status_code=201)
+@router.post(""), status_code=201)
 @require_permission("schedules", "create")
 async def create_schedule(
     data: dict,
