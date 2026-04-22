@@ -115,8 +115,17 @@ app.include_router(sa_audit.router, prefix=f"{PREFIX}/superadmin/audit", tags=["
 
 
 static_uploads = "/app/static/uploads"
-os.makedirs(static_uploads, exist_ok=True)
-app.mount("/static/uploads", StaticFiles(directory=static_uploads), name="uploads")
+try:
+    os.makedirs(static_uploads, exist_ok=True)
+except PermissionError:
+    import logging
+    logging.getLogger(__name__).warning(
+        "Cannot create %s (permission denied). File uploads will fail until the directory is writable.",
+        static_uploads,
+    )
+
+if os.path.isdir(static_uploads):
+    app.mount("/static/uploads", StaticFiles(directory=static_uploads), name="uploads")
 
 
 @app.get("/", tags=["Health"])
