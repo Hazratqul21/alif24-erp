@@ -20,7 +20,7 @@ export default function DirectorLayout() {
 
   const navItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/director' },
-    { icon: Users, label: t('nav.staff', 'Xodimlar'), path: '/director/staff' },
+    { icon: Users, label: t('nav.staff', 'Xodimlar'), path: '/director/hr/staff' },
     { icon: GraduationCap, label: t('nav.classes', 'Sinflar'), path: '/director/classes' },
     { icon: UserCheck, label: t('nav.students', "O'quvchilar"), path: '/director/students' },
     { icon: BookOpen, label: t('nav.teachers', "O'qituvchilar"), path: '/director/teachers' },

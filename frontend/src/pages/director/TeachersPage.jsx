@@ -16,7 +16,7 @@ export default function TeachersPage() {
   useEffect(() => {
     setLoading(true);
     api.get('/teachers', { params: { page, search } })
-      .then(res => { const d = res.data || res; setTeachers(d.items || []); setTotalPages(d.total_pages || 1); })
+      .then(res => { const d = res.data || res; setTeachers(d.items || []); setTotalPages(d.total_pages || Math.ceil((d.total || 0) / 20) || 1); })
       .catch(() => setTeachers([]))
       .finally(() => setLoading(false));
   }, [page, search]);

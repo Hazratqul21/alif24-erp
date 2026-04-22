@@ -23,19 +23,23 @@ async def search_books(
     conditions = []
     params: dict = {"limit": per_page, "offset": (page - 1) * per_page}
     if search:
-        conditions.append("(b.title ILIKE :search OR b.author ILIKE :search OR b.isbn ILIKE :search)")
+        conditions.append("(cb.title ILIKE :search OR cb.author ILIKE :search OR cb.isbn ILIKE :search)")
         params["search"] = f"%{search}%"
     if category:
-        conditions.append("b.category = :category")
+        conditions.append("cb.genre = :category")
         params["category"] = category
 
     where = "WHERE " + " AND ".join(conditions) if conditions else ""
-    total = (await db.execute(text(f"SELECT COUNT(*) FROM books b {where}"), params)).scalar()
+    total = (await db.execute(text(f"""
+        SELECT COUNT(*) FROM school_books sb
+        JOIN public.central_books cb ON cb.id = sb.central_book_id {where}
+    """), params)).scalar()
     rows = await db.execute(text(f"""
-        SELECT b.id, b.title, b.author, b.isbn, b.category, b.total_copies,
-               b.available_copies, b.created_at
-        FROM books b {where}
-        ORDER BY b.title LIMIT :limit OFFSET :offset
+        SELECT sb.id, cb.title, cb.author, cb.isbn, cb.genre as category,
+               sb.total_copies, sb.available_copies, sb.created_at
+        FROM school_books sb
+        JOIN public.central_books cb ON cb.id = sb.central_book_id {where}
+        ORDER BY cb.title LIMIT :limit OFFSET :offset
     """), params)
     return {"items": [dict(r._mapping) for r in rows], "total": total, "page": page}
 
@@ -47,14 +51,18 @@ async def add_book(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    central_book_id = data.get("central_book_id")
+    if not central_book_id:
+        raise AppError("central_book_id majburiy")
     row = await db.execute(text("""
-        INSERT INTO books (title, author, isbn, category, total_copies, available_copies, central_book_id)
-        VALUES (:title, :author, :isbn, :category, :copies, :copies, :central_id)
+        INSERT INTO school_books (central_book_id, total_copies, available_copies, location, notes)
+        VALUES (:central_book_id, :copies, :copies, :location, :notes)
         RETURNING id
     """), {
-        "title": data["title"], "author": data.get("author"), "isbn": data.get("isbn"),
-        "category": data.get("category"), "copies": data.get("total_copies", 1),
-        "central_id": data.get("central_book_id"),
+        "central_book_id": central_book_id,
+        "copies": data.get("total_copies", 1),
+        "location": data.get("location"),
+        "notes": data.get("notes"),
     })
     await db.commit()
     return {"id": row.scalar(), "message": "Kitob qo'shildi"}
@@ -117,7 +125,7 @@ async def lend_book(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    book = await db.execute(text("SELECT available_copies FROM books WHERE id = :id"), {"id": data["book_id"]})
+    book = await db.execute(text("SELECT available_copies FROM school_books WHERE id = :id"), {"id": data["book_id"]})
     avail = book.scalar()
     if avail is None:
         raise NotFoundError("Kitob")
@@ -125,14 +133,14 @@ async def lend_book(
         raise AppError("Kitob mavjud emas (barcha nusxalar berilgan)")
 
     row = await db.execute(text("""
-        INSERT INTO book_loans (book_id, student_id, loaned_by, loan_date, due_date)
-        VALUES (:book_id, :student_id, :loaned_by, NOW(), :due_date)
+        INSERT INTO book_loans (school_book_id, student_id, loan_date, due_date, status)
+        VALUES (:book_id, :student_id, NOW(), :due_date, 'borrowed')
         RETURNING id
     """), {
         "book_id": data["book_id"], "student_id": data["student_id"],
-        "loaned_by": current_user["id"], "due_date": data["due_date"],
+        "due_date": data["due_date"],
     })
-    await db.execute(text("UPDATE books SET available_copies = available_copies - 1 WHERE id = :id"), {"id": data["book_id"]})
+    await db.execute(text("UPDATE school_books SET available_copies = available_copies - 1 WHERE id = :id"), {"id": data["book_id"]})
     await db.commit()
     return {"id": row.scalar(), "message": "Kitob berildi"}
 
@@ -144,15 +152,15 @@ async def return_book(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    loan = await db.execute(text("SELECT book_id, returned_at FROM book_loans WHERE id = :id"), {"id": loan_id})
+    loan = await db.execute(text("SELECT school_book_id, return_date FROM book_loans WHERE id = :id"), {"id": loan_id})
     row = loan.fetchone()
     if not row:
         raise NotFoundError("Kitob berish yozuvi")
     if row[1]:
         raise AppError("Kitob allaqachon qaytarilgan")
 
-    await db.execute(text("UPDATE book_loans SET returned_at = NOW() WHERE id = :id"), {"id": loan_id})
-    await db.execute(text("UPDATE books SET available_copies = available_copies + 1 WHERE id = :id"), {"id": row[0]})
+    await db.execute(text("UPDATE book_loans SET return_date = CURRENT_DATE, status = 'returned' WHERE id = :id"), {"id": loan_id})
+    await db.execute(text("UPDATE school_books SET available_copies = available_copies + 1 WHERE id = :id"), {"id": row[0]})
     await db.commit()
     return {"message": "Kitob qaytarildi"}
 
@@ -164,13 +172,14 @@ async def overdue_loans(
     db: AsyncSession = Depends(get_db),
 ):
     rows = await db.execute(text("""
-        SELECT bl.id, b.title, u.first_name, u.last_name, bl.loan_date, bl.due_date,
+        SELECT bl.id, cb.title, u.first_name, u.last_name, bl.loan_date, bl.due_date,
                (CURRENT_DATE - bl.due_date) as days_overdue
         FROM book_loans bl
-        JOIN books b ON b.id = bl.book_id
+        JOIN school_books sb ON sb.id = bl.school_book_id
+        JOIN public.central_books cb ON cb.id = sb.central_book_id
         JOIN students s ON s.id = bl.student_id
         JOIN users u ON u.id = s.user_id
-        WHERE bl.returned_at IS NULL AND bl.due_date < CURRENT_DATE
+        WHERE bl.return_date IS NULL AND bl.due_date < CURRENT_DATE
         ORDER BY bl.due_date
     """))
     return {"overdue": [dict(r._mapping) for r in rows]}
@@ -184,11 +193,11 @@ async def library_stats(
 ):
     stats = await db.execute(text("""
         SELECT
-            (SELECT COUNT(*) FROM books) as total_books,
-            (SELECT SUM(total_copies) FROM books) as total_copies,
-            (SELECT SUM(available_copies) FROM books) as available_copies,
-            (SELECT COUNT(*) FROM book_loans WHERE returned_at IS NULL) as active_loans,
-            (SELECT COUNT(*) FROM book_loans WHERE returned_at IS NULL AND due_date < CURRENT_DATE) as overdue
+            (SELECT COUNT(*) FROM school_books) as total_books,
+            (SELECT SUM(total_copies) FROM school_books) as total_copies,
+            (SELECT SUM(available_copies) FROM school_books) as available_copies,
+            (SELECT COUNT(*) FROM book_loans WHERE return_date IS NULL) as active_loans,
+            (SELECT COUNT(*) FROM book_loans WHERE return_date IS NULL AND due_date < CURRENT_DATE) as overdue
     """))
     return dict(stats.fetchone()._mapping)
 
@@ -200,8 +209,10 @@ async def export_books(
     db: AsyncSession = Depends(get_db),
 ):
     rows = await db.execute(text("""
-        SELECT b.title, b.author, b.isbn, b.category, b.total_copies, b.available_copies
-        FROM books b ORDER BY b.title
+        SELECT cb.title, cb.author, cb.isbn, cb.genre as category, sb.total_copies, sb.available_copies
+        FROM school_books sb
+        JOIN public.central_books cb ON cb.id = sb.central_book_id
+        ORDER BY cb.title
     """))
     return {"data": [dict(r._mapping) for r in rows], "format": "xlsx", "message": "Eksport tayyor"}
 

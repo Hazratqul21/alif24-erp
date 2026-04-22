@@ -34,7 +34,7 @@ export default function StudentsPage() {
   const loadStudents = () => {
     setLoading(true);
     api.get('/students', { params: { page, search, class_id: classFilter || undefined } })
-      .then(res => { const d = res.data || res; setStudents(d.items || []); setTotalPages(d.total_pages || 1); })
+      .then(res => { const d = res.data || res; setStudents(d.items || []); setTotalPages(d.total_pages || Math.ceil((d.total || 0) / 20) || 1); })
       .catch(() => setStudents([]))
       .finally(() => setLoading(false));
   };
@@ -57,7 +57,7 @@ export default function StudentsPage() {
     if (!alif24Search.trim()) return;
     setAlif24Searching(true);
     try {
-      const res = await api.get('/alif24/search', { params: { q: alif24Search, role: 'student', limit: 20 } });
+      const res = await api.get('/integration/search', { params: { q: alif24Search, role: 'student', limit: 20 } });
       const data = res.data || res;
       setAlif24Results(data.users || []);
       if ((data.users || []).length === 0) {
@@ -72,7 +72,7 @@ export default function StudentsPage() {
 
   const handleAlif24Lookup = async (alif24Id) => {
     try {
-      const res = await api.get(`/alif24/lookup/${alif24Id}`);
+      const res = await api.get(`/integration/lookup/${alif24Id}`);
       const data = res.data || res;
       if (data.found) {
         setAlif24UserDetail(data.user);

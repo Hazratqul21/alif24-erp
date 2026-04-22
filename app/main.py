@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 import logging
 import sentry_sdk
 
@@ -17,7 +19,7 @@ from app.api.v1 import (
     canteen, transport, notifications, documents,
     competitions, rooms, homework, exams, admissions,
     portfolio, surveys, reports, audit, holidays,
-    alif24_integration,
+    alif24_integration, upload,
 )
 from app.api.v1.superadmin import (
     tenants as sa_tenants,
@@ -104,11 +106,17 @@ app.include_router(reports.router, prefix=f"{PREFIX}/reports", tags=["Reports"])
 app.include_router(audit.router, prefix=f"{PREFIX}/audit", tags=["Audit"])
 app.include_router(holidays.router, prefix=f"{PREFIX}/holidays", tags=["Holidays"])
 app.include_router(alif24_integration.router, prefix=f"{PREFIX}", tags=["Alif24 Integration"])
+app.include_router(upload.router, prefix=f"{PREFIX}/upload", tags=["Upload"])
 
 app.include_router(sa_tenants.router, prefix=f"{PREFIX}/superadmin/tenants", tags=["Super Admin - Tenants"])
 app.include_router(sa_plans.router, prefix=f"{PREFIX}/superadmin/plans", tags=["Super Admin - Plans"])
 app.include_router(sa_monitoring.router, prefix=f"{PREFIX}/superadmin/monitoring", tags=["Super Admin - Monitoring"])
 app.include_router(sa_audit.router, prefix=f"{PREFIX}/superadmin/audit", tags=["Super Admin - Audit"])
+
+
+static_uploads = "/app/static/uploads"
+os.makedirs(static_uploads, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=static_uploads), name="uploads")
 
 
 @app.get("/", tags=["Health"])

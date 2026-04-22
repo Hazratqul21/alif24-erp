@@ -25,8 +25,10 @@ export default function LoginPage() {
     try {
       const user = await login(emailOrPhone, password);
       toast.success(t('login_success'));
-      const role = user.role?.toLowerCase();
+      const roles = (user.roles || [user.role]).filter(Boolean).map(r => r.toLowerCase());
+      const role = roles[0];
       const roleRoutes = {
+        super_admin: '/superadmin',
         superadmin: '/superadmin',
         director: '/director',
         deputy_director: '/deputy-director',

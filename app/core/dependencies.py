@@ -95,7 +95,7 @@ async def get_current_user(
             "first_name": sa_row[2] or "Super",
             "last_name": sa_row[3] or "Admin",
             "is_active": sa_row[4],
-            "roles": ["superadmin"],
+            "roles": ["super_admin"],
             "permissions": [{"module": "*", "action": "*"}],
             "tenant_id": None,
         }

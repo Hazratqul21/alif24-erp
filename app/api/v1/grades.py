@@ -58,6 +58,45 @@ async def bulk_grades(
     return {"count": count, "message": f"{count} ta baho qo'yildi"}
 
 
+@router.get("/mine")
+async def my_grades(
+    subject_id: Optional[int] = None,
+    grade_type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get grades for currently logged-in student."""
+    student = await db.execute(
+        text("SELECT id FROM students WHERE user_id = :uid AND status != 'deleted'"),
+        {"uid": str(current_user["id"])},
+    )
+    s = student.fetchone()
+    if not s:
+        return {"grades": []}
+
+    conditions = ["g.student_id = :student_id"]
+    params: dict = {"student_id": s[0]}
+    if subject_id:
+        conditions.append("g.subject_id = :subject_id")
+        params["subject_id"] = subject_id
+    if grade_type:
+        conditions.append("g.grade_type = :grade_type")
+        params["grade_type"] = grade_type
+
+    where = " AND ".join(conditions)
+    rows = await db.execute(text(f"""
+        SELECT g.id, g.score, g.grade_type, g.comment, g.graded_at,
+               sub.name as subject, u.first_name || ' ' || u.last_name as teacher
+        FROM grades g
+        JOIN subjects sub ON sub.id = g.subject_id
+        LEFT JOIN teachers t ON t.id = g.teacher_id
+        LEFT JOIN users u ON u.id = t.user_id
+        WHERE {where}
+        ORDER BY g.graded_at DESC
+    """), params)
+    return {"grades": [dict(r._mapping) for r in rows]}
+
+
 @router.get("/student/{student_id}")
 @require_permission("grades", "read")
 async def student_grades(
@@ -106,7 +145,7 @@ async def class_subject_grades(
         FROM students s
         JOIN users u ON u.id = s.user_id
         LEFT JOIN grades g ON g.student_id = s.id AND g.subject_id = :subject_id
-        WHERE s.class_id = :class_id AND s.deleted_at IS NULL
+        WHERE s.current_class_id = :class_id AND s.status != 'deleted'
         GROUP BY s.id, u.first_name, u.last_name
         ORDER BY u.last_name
     """), {"class_id": class_id, "subject_id": subject_id})
@@ -124,7 +163,7 @@ async def ranking(
     where = ""
     params: dict = {"limit": limit}
     if class_id:
-        where = "WHERE s.class_id = :class_id"
+        where = "WHERE s.current_class_id = :class_id"
         params["class_id"] = class_id
 
     rows = await db.execute(text(f"""
@@ -133,7 +172,7 @@ async def ranking(
                RANK() OVER (ORDER BY AVG(g.score) DESC) as rank
         FROM students s
         JOIN users u ON u.id = s.user_id
-        LEFT JOIN classes c ON c.id = s.class_id
+        LEFT JOIN classes c ON c.id = s.current_class_id
         JOIN grades g ON g.student_id = s.id
         {where}
         GROUP BY s.id, u.first_name, u.last_name, c.name
@@ -153,7 +192,7 @@ async def student_report_card(
     student = await db.execute(text("""
         SELECT s.id, u.first_name, u.last_name, c.name as class_name
         FROM students s JOIN users u ON u.id = s.user_id
-        LEFT JOIN classes c ON c.id = s.class_id
+        LEFT JOIN classes c ON c.id = s.current_class_id
         WHERE s.id = :id
     """), {"id": student_id})
     info = student.fetchone()
@@ -190,7 +229,7 @@ async def generate_report_cards(
 
     if class_id and not student_ids:
         rows = await db.execute(text("""
-            SELECT id FROM students WHERE class_id = :cid AND deleted_at IS NULL
+            SELECT id FROM students WHERE current_class_id = :cid AND status != 'deleted'
         """), {"cid": class_id})
         student_ids = [r[0] for r in rows]
 

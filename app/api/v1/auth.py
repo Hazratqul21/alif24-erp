@@ -72,9 +72,8 @@ async def login(
                 raise UnauthorizedError("Parol noto'g'ri")
 
             sa_id = f"sa_{sa_row[0]}"
-            roles = ["superadmin"]
 
-            token_data = {"sub": sa_id, "email": sa_row[1], "roles": roles}
+            token_data = {"sub": sa_id, "email": sa_row[1], "roles": ["super_admin"]}
             access_token = create_access_token(token_data)
             refresh_token = create_refresh_token(token_data)
 
@@ -102,7 +101,7 @@ async def login(
                     phone=None,
                     first_name=sa_row[3] or "Super",
                     last_name=sa_row[4] or "Admin",
-                    roles=roles,
+                    roles=["super_admin"],
                 ),
             )
 
@@ -191,11 +190,14 @@ async def logout(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
-    await db.execute(
-        text("UPDATE users SET refresh_token = NULL WHERE id = :uid"),
-        {"uid": current_user["id"]},
-    )
-    await db.commit()
+    user_id = current_user["id"]
+    # Super Admin users are not stored in the users table
+    if not str(user_id).startswith("sa_"):
+        await db.execute(
+            text("UPDATE users SET refresh_token = NULL WHERE id = :uid"),
+            {"uid": user_id},
+        )
+        await db.commit()
 
     response.delete_cookie("access_token")
     return {"detail": "Tizimdan muvaffaqiyatli chiqdingiz"}
@@ -214,6 +216,28 @@ async def refresh_token(
     user_id = payload.get("sub")
     if not user_id:
         raise UnauthorizedError("Token ma'lumotlari noto'g'ri")
+
+    # Super Admin refresh
+    if str(user_id).startswith("sa_"):
+        sa_id = int(str(user_id).replace("sa_", ""))
+        sa_result = await db.execute(
+            text("SELECT id, email, first_name, last_name, is_active FROM public.super_admins WHERE id = :uid"),
+            {"uid": sa_id},
+        )
+        sa_row = sa_result.fetchone()
+        if not sa_row:
+            raise UnauthorizedError("Super Admin topilmadi")
+        if not sa_row[4]:
+            raise UnauthorizedError("Hisob faol emas")
+        token_data = {"sub": user_id, "email": sa_row[1], "roles": ["super_admin"]}
+        new_access = create_access_token(token_data)
+        new_refresh = create_refresh_token(token_data)
+        response.set_cookie(
+            key="access_token", value=new_access, httponly=True,
+            secure=settings.APP_ENV != "development", samesite="lax",
+            max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+        return RefreshResponse(access_token=new_access, refresh_token=new_refresh)
 
     result = await db.execute(
         text("""

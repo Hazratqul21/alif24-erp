@@ -14,7 +14,7 @@ export default function MedicalLayout() {
   const navItems = [
     { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/medical' },
     { icon: FileHeart, label: t('nav.medicalRecords', 'Tibbiy kartalar'), path: '/medical/records' },
-    { icon: Stethoscope, label: t('nav.examinations', "Ko'riklar"), path: '/medical/examinations' },
+    { icon: Stethoscope, label: t('nav.examinations', "Ko'riklar"), path: '/medical/checkups' },
     { icon: ShieldAlert, label: t('nav.quarantine', 'Karantin'), path: '/medical/quarantine' },
   ];
 

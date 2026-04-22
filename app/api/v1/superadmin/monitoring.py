@@ -21,13 +21,13 @@ async def system_stats(
             (SELECT COUNT(*) FROM tenants WHERE is_active = true AND deleted_at IS NULL) as active_tenants,
             (SELECT COUNT(*) FROM tenants WHERE is_blocked = true) as blocked_tenants,
             (SELECT COUNT(*) FROM tenants WHERE subscription_end < CURRENT_DATE AND deleted_at IS NULL) as expired_tenants,
-            (SELECT COUNT(*) FROM subscription_plans WHERE is_active = true) as active_plans
+            (SELECT COUNT(*) FROM plans WHERE is_active = true) as active_plans
     """))
     row = stats.fetchone()
 
     plan_distribution = await db.execute(text("""
         SELECT sp.name as plan_name, COUNT(t.id) as tenant_count
-        FROM subscription_plans sp
+        FROM plans sp
         LEFT JOIN tenants t ON t.plan_id = sp.id AND t.deleted_at IS NULL
         GROUP BY sp.name ORDER BY tenant_count DESC
     """))
@@ -74,8 +74,8 @@ async def tenant_usage(
     """))
 
     plan_limits = await db.execute(text("""
-        SELECT sp.max_students, sp.max_teachers, sp.max_storage_gb
-        FROM subscription_plans sp WHERE sp.id = :plan_id
+        SELECT sp.max_students, sp.max_teachers
+        FROM plans sp WHERE sp.id = :plan_id
     """), {"plan_id": t[3]})
     limits = plan_limits.fetchone()
 

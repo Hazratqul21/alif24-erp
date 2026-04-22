@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { UploadCloud, File, X, CheckCircle } from 'lucide-react';
+import api from '../../services/api';
 
 const formatSize = (bytes) => {
   if (bytes < 1024) return `${bytes} B`;
@@ -9,9 +10,10 @@ const formatSize = (bytes) => {
 
 const FileUpload = ({
   onUpload,
+  uploadUrl = '/upload',
   accept,
   maxSize = 10 * 1024 * 1024,
-  label = 'Перетащите файл сюда или нажмите для выбора',
+  label = "Faylni bu yerga tashlang yoki tanlash uchun bosing",
 }) => {
   const inputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
@@ -21,29 +23,38 @@ const FileUpload = ({
   const [done, setDone] = useState(false);
 
   const processFile = useCallback(
-    (f) => {
+    async (f) => {
       setError('');
       setDone(false);
       if (maxSize && f.size > maxSize) {
-        setError(`Файл превышает ${formatSize(maxSize)}`);
+        setError(`Fayl hajmi ${formatSize(maxSize)} dan oshmasligi kerak`);
         return;
       }
       setFile(f);
-      setProgress(0);
+      setProgress(10);
 
-      let pct = 0;
-      const interval = setInterval(() => {
-        pct += Math.random() * 30;
-        if (pct >= 100) {
-          pct = 100;
-          clearInterval(interval);
-          setDone(true);
-          onUpload?.(f);
-        }
-        setProgress(Math.min(pct, 100));
-      }, 200);
+      const formData = new FormData();
+      formData.append('file', f);
+
+      try {
+        const res = await api.post(uploadUrl, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          onUploadProgress: (evt) => {
+            if (evt.total) {
+              setProgress(Math.round((evt.loaded / evt.total) * 100));
+            }
+          },
+        });
+        setProgress(100);
+        setDone(true);
+        onUpload?.(res.data || f);
+      } catch (err) {
+        setError(err?.response?.data?.detail || "Yuklashda xatolik yuz berdi");
+        setFile(null);
+        setProgress(0);
+      }
     },
-    [maxSize, onUpload],
+    [maxSize, onUpload, uploadUrl],
   );
 
   const handleDrop = useCallback(
@@ -90,7 +101,7 @@ const FileUpload = ({
           <>
             <UploadCloud className={`w-10 h-10 ${dragActive ? 'text-blue-500' : 'text-gray-400'}`} />
             <p className="text-sm text-gray-500">{label}</p>
-            <p className="text-xs text-gray-400">Макс. размер: {formatSize(maxSize)}</p>
+            <p className="text-xs text-gray-400">Maks. hajm: {formatSize(maxSize)}</p>
           </>
         ) : (
           <div className="w-full space-y-3">

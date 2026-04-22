@@ -13,15 +13,15 @@ router = APIRouter(tags=["Payments"])
 @router.get("/student/{student_id}")
 @require_permission("payments", "read")
 async def student_payments(
-    student_id: int,
+    student_id: str,
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     rows = await db.execute(text("""
-        SELECT p.id, p.amount, p.payment_type, p.status, p.paid_at,
+        SELECT p.id, p.amount, p.payment_type, p.status, p.payment_date,
                p.description, p.payment_method, p.transaction_id
         FROM payments p WHERE p.student_id = :id
-        ORDER BY p.paid_at DESC
+        ORDER BY p.payment_date DESC
     """), {"id": student_id})
     return {"payments": [dict(r._mapping) for r in rows]}
 
@@ -36,7 +36,7 @@ async def outstanding_debts(
     where = ""
     params: dict = {}
     if class_id:
-        where = "AND s.class_id = :class_id"
+        where = "AND s.current_class_id = :class_id"
         params["class_id"] = class_id
 
     rows = await db.execute(text(f"""
@@ -46,10 +46,10 @@ async def outstanding_debts(
                f.amount - COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'paid'), 0) as debt
         FROM students s
         JOIN users u ON u.id = s.user_id
-        LEFT JOIN classes c ON c.id = s.class_id
+        LEFT JOIN classes c ON c.id = s.current_class_id
         CROSS JOIN fees f
-        LEFT JOIN payments p ON p.student_id = s.id AND p.fee_id = f.id
-        WHERE s.deleted_at IS NULL {where}
+        LEFT JOIN payments p ON p.student_id = s.id
+        WHERE s.status != 'deleted' {where}
         GROUP BY s.id, u.first_name, u.last_name, c.name, f.name, f.amount
         HAVING f.amount - COALESCE(SUM(p.amount) FILTER (WHERE p.status = 'paid'), 0) > 0
         ORDER BY debt DESC
@@ -65,15 +65,14 @@ async def initiate_online_payment(
     db: AsyncSession = Depends(get_db),
 ):
     row = await db.execute(text("""
-        INSERT INTO payments (student_id, amount, payment_type, payment_method, status, description, fee_id)
-        VALUES (:student_id, :amount, 'tuition', :method, 'pending', :description, :fee_id)
+        INSERT INTO payments (student_id, amount, payment_type, payment_method, status, description)
+        VALUES (:student_id, :amount, 'tuition', :method, 'pending', :description)
         RETURNING id
     """), {
-        "student_id": data["student_id"],
+        "student_id": str(data["student_id"]),
         "amount": data["amount"],
         "method": data.get("method", "online"),
         "description": data.get("description"),
-        "fee_id": data.get("fee_id"),
     })
     payment_id = row.scalar()
     await db.commit()
@@ -107,7 +106,7 @@ async def payme_callback(
     elif method == "PerformTransaction":
         payment_id = params.get("account", {}).get("payment_id")
         await db.execute(text("""
-            UPDATE payments SET status = 'paid', paid_at = NOW(),
+            UPDATE payments SET status = 'paid', payment_date = CURRENT_DATE,
                 transaction_id = :tid WHERE id = :id
         """), {"id": payment_id, "tid": params.get("id")})
         await db.commit()
@@ -134,7 +133,7 @@ async def click_callback(
 
     elif action == 1:
         await db.execute(text("""
-            UPDATE payments SET status = 'paid', paid_at = NOW(),
+            UPDATE payments SET status = 'paid', payment_date = CURRENT_DATE,
                 transaction_id = :tid WHERE id = :id
         """), {"id": payment_id, "tid": body.get("click_trans_id")})
         await db.commit()
@@ -151,8 +150,8 @@ async def download_invoice(
     db: AsyncSession = Depends(get_db),
 ):
     row = await db.execute(text("""
-        SELECT p.id, p.amount, p.status, p.paid_at, p.description,
-               u.first_name, u.last_name, s.student_code
+        SELECT p.id, p.amount, p.status, p.payment_date, p.description,
+               u.first_name, u.last_name, s.student_id as student_code
         FROM payments p
         JOIN students s ON s.id = p.student_id
         JOIN users u ON u.id = s.user_id

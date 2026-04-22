@@ -17,10 +17,10 @@ async def list_plans(
 ):
     rows = await db.execute(text("""
         SELECT sp.id, sp.name, sp.description, sp.price_monthly, sp.price_yearly,
-               sp.max_students, sp.max_teachers, sp.max_storage_gb, sp.features,
+               sp.max_students, sp.max_teachers,
                sp.is_active, sp.created_at,
                (SELECT COUNT(*) FROM tenants t WHERE t.plan_id = sp.id) as tenant_count
-        FROM subscription_plans sp
+        FROM plans sp
         ORDER BY sp.price_monthly
     """))
     return {"items": [dict(r._mapping) for r in rows]}
@@ -34,17 +34,15 @@ async def create_plan(
     db: AsyncSession = Depends(get_public_db),
 ):
     row = await db.execute(text("""
-        INSERT INTO subscription_plans (name, description, price_monthly, price_yearly,
-                                        max_students, max_teachers, max_storage_gb, features, is_active)
+        INSERT INTO plans (name, description, price_monthly, price_yearly,
+                           max_students, max_teachers, is_active)
         VALUES (:name, :description, :price_monthly, :price_yearly,
-                :max_students, :max_teachers, :max_storage_gb, :features::jsonb, :is_active)
+                :max_students, :max_teachers, :is_active)
         RETURNING id
     """), {
         "name": data["name"], "description": data.get("description"),
         "price_monthly": data["price_monthly"], "price_yearly": data.get("price_yearly"),
         "max_students": data.get("max_students"), "max_teachers": data.get("max_teachers"),
-        "max_storage_gb": data.get("max_storage_gb", 10),
-        "features": str(data.get("features", "{}")),
         "is_active": data.get("is_active", True),
     })
     await db.commit()
@@ -58,7 +56,7 @@ async def get_plan(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_public_db),
 ):
-    row = await db.execute(text("SELECT * FROM subscription_plans WHERE id = :id"), {"id": plan_id})
+    row = await db.execute(text("SELECT * FROM plans WHERE id = :id"), {"id": plan_id})
     plan = row.fetchone()
     if not plan:
         raise NotFoundError("Obuna rejasi")
@@ -74,19 +72,17 @@ async def update_plan(
     db: AsyncSession = Depends(get_public_db),
 ):
     result = await db.execute(text("""
-        UPDATE subscription_plans SET name = COALESCE(:name, name),
+        UPDATE plans SET name = COALESCE(:name, name),
             description = COALESCE(:description, description),
             price_monthly = COALESCE(:price_monthly, price_monthly),
             price_yearly = COALESCE(:price_yearly, price_yearly),
             max_students = COALESCE(:max_students, max_students),
             max_teachers = COALESCE(:max_teachers, max_teachers),
-            max_storage_gb = COALESCE(:max_storage_gb, max_storage_gb),
-            is_active = COALESCE(:is_active, is_active),
-            updated_at = NOW()
+            is_active = COALESCE(:is_active, is_active)
         WHERE id = :id RETURNING id
     """), {
         **{k: data.get(k) for k in ("name", "description", "price_monthly", "price_yearly",
-                                      "max_students", "max_teachers", "max_storage_gb", "is_active")},
+                                      "max_students", "max_teachers", "is_active")},
         "id": plan_id,
     })
     if not result.fetchone():
@@ -103,7 +99,7 @@ async def delete_plan(
     db: AsyncSession = Depends(get_public_db),
 ):
     result = await db.execute(text("""
-        UPDATE subscription_plans SET is_active = false WHERE id = :id RETURNING id
+        UPDATE plans SET is_active = false WHERE id = :id RETURNING id
     """), {"id": plan_id})
     if not result.fetchone():
         raise NotFoundError("Obuna rejasi")

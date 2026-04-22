@@ -9,7 +9,7 @@ export default function StudentGradesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/grades/student/me').then(res => setGrades((res.data || res).items || res.data || res || []))
+    api.get('/grades/mine').then(res => setGrades((res.data || res).grades || []))
       .catch(() => setGrades([])).finally(() => setLoading(false));
   }, []);
 

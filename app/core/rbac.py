@@ -24,16 +24,8 @@ def require_permission(module: str, action: str):
     def decorator(func: Callable):
         @wraps(func)
         async def wrapper(*args, current_user: dict = Depends(get_current_user), **kwargs):
-            permissions = current_user.get("permissions", [])
-            has_perm = any(
-                p["module"] == module and p["action"] == action
-                for p in permissions
-            )
-            if not has_perm:
-                director_roles = {"super_admin", "director", "administrator"}
-                user_roles = set(current_user.get("roles", []))
-                if not user_roles.intersection(director_roles):
-                    raise ForbiddenError(f"'{module}.{action}' ruxsati yo'q")
+            if not check_permission(current_user, module, action):
+                raise ForbiddenError(f"'{module}.{action}' ruxsati yo'q")
             return await func(*args, current_user=current_user, **kwargs)
         return wrapper
     return decorator
@@ -41,6 +33,13 @@ def require_permission(module: str, action: str):
 
 def check_permission(current_user: dict, module: str, action: str) -> bool:
     permissions = current_user.get("permissions", [])
+    # Wildcard permission (* matches any module/action) — super admin
+    has_wildcard = any(
+        p.get("module") == "*" or p.get("action") == "*"
+        for p in permissions
+    )
+    if has_wildcard:
+        return True
     has_perm = any(
         p["module"] == module and p["action"] == action
         for p in permissions

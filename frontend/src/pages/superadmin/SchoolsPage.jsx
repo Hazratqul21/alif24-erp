@@ -22,7 +22,7 @@ export default function SchoolsPage() {
       const res = await api.get('/superadmin/tenants', { params: { page, search } });
       const data = res.data || res;
       setSchools(data.items || []);
-      setTotalPages(data.total_pages || 1);
+      setTotalPages(data.total_pages || Math.ceil((data.total || 0) / 20) || 1);
     } catch { setSchools([]); }
     finally { setLoading(false); }
   };

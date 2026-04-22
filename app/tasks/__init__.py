@@ -17,3 +17,10 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
 )
+
+# Register all task modules so workers discover them
+celery_app.autodiscover_tasks([
+    "app.tasks.notification_tasks",
+    "app.tasks.report_tasks",
+    "app.tasks.backup_tasks",
+])

@@ -4,6 +4,72 @@ import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import LoginPage from './pages/LoginPage';
 
+// Layouts
+import SuperAdminLayout from './layouts/SuperAdminLayout';
+import DirectorLayout from './layouts/DirectorLayout';
+import TeacherLayout from './layouts/TeacherLayout';
+import StudentLayout from './layouts/StudentLayout';
+import ParentLayout from './layouts/ParentLayout';
+import AccountantLayout from './layouts/AccountantLayout';
+import LibrarianLayout from './layouts/LibrarianLayout';
+import MedicalLayout from './layouts/MedicalLayout';
+
+// SuperAdmin pages
+import SuperAdminDashboard from './pages/superadmin/Dashboard';
+import SchoolsPage from './pages/superadmin/SchoolsPage';
+import PlansPage from './pages/superadmin/PlansPage';
+import MonitoringPage from './pages/superadmin/MonitoringPage';
+
+// Director pages
+import DirectorDashboard from './pages/director/Dashboard';
+import DirectorStudentsPage from './pages/director/StudentsPage';
+import DirectorTeachersPage from './pages/director/TeachersPage';
+import DirectorClassesPage from './pages/director/ClassesPage';
+import DirectorGradesPage from './pages/director/GradesPage';
+import DirectorAttendancePage from './pages/director/AttendancePage';
+import DirectorPaymentsPage from './pages/director/PaymentsPage';
+import DirectorReportsPage from './pages/director/ReportsPage';
+import DirectorStaffPage from './pages/director/StaffPage';
+
+// Teacher pages
+import TeacherDashboard from './pages/teacher/Dashboard';
+import TeacherAttendancePage from './pages/teacher/AttendancePage';
+import TeacherGradesPage from './pages/teacher/GradesPage';
+import TeacherHomeworkPage from './pages/teacher/HomeworkPage';
+import TeacherMyClassesPage from './pages/teacher/MyClassesPage';
+
+// Student pages
+import StudentDashboard from './pages/student/Dashboard';
+import StudentGradesPage from './pages/student/GradesPage';
+import StudentSchedulePage from './pages/student/SchedulePage';
+import StudentHomeworkPage from './pages/student/HomeworkPage';
+import StudentLibraryPage from './pages/student/LibraryPage';
+
+// Parent pages
+import ParentDashboard from './pages/parent/Dashboard';
+import ChildrenPage from './pages/parent/ChildrenPage';
+import ParentMessagesPage from './pages/parent/MessagesPage';
+import ParentPaymentsPage from './pages/parent/PaymentsPage';
+
+// Accountant pages
+import AccountantDashboard from './pages/accountant/Dashboard';
+import AccountantPaymentsPage from './pages/accountant/PaymentsPage';
+import DebtsPage from './pages/accountant/DebtsPage';
+import InvoicesPage from './pages/accountant/InvoicesPage';
+
+// Librarian pages
+import LibrarianDashboard from './pages/librarian/Dashboard';
+import BooksPage from './pages/librarian/BooksPage';
+import LoansPage from './pages/librarian/LoansPage';
+import OverduePage from './pages/librarian/OverduePage';
+import InterlibraryPage from './pages/librarian/InterlibraryPage';
+
+// Medical pages
+import MedicalDashboard from './pages/medical/Dashboard';
+import MedicalRecordsPage from './pages/medical/RecordsPage';
+import MedicalExamsPage from './pages/medical/ExamsPage';
+import QuarantinePage from './pages/medical/QuarantinePage';
+
 // Placeholder layout/page components — replace with real ones as you build them
 function PlaceholderPage({ title }) {
   return (
@@ -69,9 +135,11 @@ function ProtectedRoute({ allowedRoles }) {
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
-    const userRole = user?.role?.toLowerCase();
-    if (!allowedRoles.includes(userRole)) {
-      return <Navigate to={`/${userRole}`} replace />;
+    const userRoles = (user?.roles || [user?.role]).filter(Boolean).map(r => r.toLowerCase());
+    const hasRole = allowedRoles.some(r => userRoles.includes(r));
+    if (!hasRole) {
+      const primaryRole = userRoles[0];
+      return <Navigate to={`/${primaryRole}`} replace />;
     }
   }
 
@@ -92,8 +160,10 @@ function RoleRedirect() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const role = user.role?.toLowerCase();
+  const roles = (user.roles || [user.role]).filter(Boolean).map(r => r.toLowerCase());
+  const role = roles[0];
   const roleRoutes = {
+    super_admin: '/superadmin',
     superadmin: '/superadmin',
     director: '/director',
     deputy_director: '/deputy-director',
@@ -124,44 +194,40 @@ export default function App() {
       <Route path="/" element={<RoleRedirect />} />
 
       {/* ========== SUPERADMIN ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
-        <Route path="/superadmin" element={<DashboardPlaceholder role="superadmin" />}>
-          <Route index element={<PlaceholderPage title="Super Admin Dashboard" />} />
-          <Route path="schools" element={<PlaceholderPage title="Maktablar" />} />
-          <Route path="schools/:id" element={<PlaceholderPage title="Maktab tafsilotlari" />} />
+      <Route element={<ProtectedRoute allowedRoles={['super_admin', 'superadmin']} />}>
+        <Route path="/superadmin" element={<SuperAdminLayout />}>
+          <Route index element={<SuperAdminDashboard />} />
+          <Route path="schools" element={<SchoolsPage />} />
+          <Route path="schools/:id" element={<SchoolsPage />} />
+          <Route path="plans" element={<PlansPage />} />
+          <Route path="monitoring" element={<MonitoringPage />} />
           <Route path="users" element={<PlaceholderPage title="Foydalanuvchilar" />} />
-          <Route path="plans" element={<PlaceholderPage title="Tariflar" />} />
           <Route path="billing" element={<PlaceholderPage title="Hisob-kitob" />} />
-          <Route path="analytics" element={<PlaceholderPage title="Analitika" />} />
           <Route path="settings" element={<PlaceholderPage title="Sozlamalar" />} />
-          <Route path="logs" element={<PlaceholderPage title="Tizim loglari" />} />
+          <Route path="audit" element={<PlaceholderPage title="Audit loglari" />} />
         </Route>
       </Route>
 
       {/* ========== DIRECTOR ========== */}
       <Route element={<ProtectedRoute allowedRoles={['director']} />}>
-        <Route path="/director" element={<DashboardPlaceholder role="director" />}>
-          <Route index element={<PlaceholderPage title="Direktor Dashboard" />} />
-          <Route path="students" element={<PlaceholderPage title="O'quvchilar" />} />
-          <Route path="students/:id" element={<PlaceholderPage title="O'quvchi profili" />} />
-          <Route path="teachers" element={<PlaceholderPage title="O'qituvchilar" />} />
-          <Route path="teachers/:id" element={<PlaceholderPage title="O'qituvchi profili" />} />
-          <Route path="classes" element={<PlaceholderPage title="Sinflar" />} />
-          <Route path="classes/:id" element={<PlaceholderPage title="Sinf tafsilotlari" />} />
+        <Route path="/director" element={<DirectorLayout />}>
+          <Route index element={<DirectorDashboard />} />
+          <Route path="students" element={<DirectorStudentsPage />} />
+          <Route path="students/:id" element={<DirectorStudentsPage />} />
+          <Route path="teachers" element={<DirectorTeachersPage />} />
+          <Route path="teachers/:id" element={<DirectorTeachersPage />} />
+          <Route path="classes" element={<DirectorClassesPage />} />
+          <Route path="classes/:id" element={<DirectorClassesPage />} />
+          <Route path="attendance" element={<DirectorAttendancePage />} />
+          <Route path="grades" element={<DirectorGradesPage />} />
+          <Route path="hr/staff" element={<DirectorStaffPage />} />
+          <Route path="payments" element={<DirectorPaymentsPage />} />
+          <Route path="reports" element={<DirectorReportsPage />} />
           <Route path="subjects" element={<PlaceholderPage title="Fanlar" />} />
           <Route path="schedule" element={<PlaceholderPage title="Dars jadvali" />} />
-          <Route path="attendance" element={<PlaceholderPage title="Davomat" />} />
-          <Route path="grades" element={<PlaceholderPage title="Baholar" />} />
           <Route path="exams" element={<PlaceholderPage title="Imtihonlar" />} />
-          <Route path="finance" element={<PlaceholderPage title="Moliya" />} />
-          <Route path="finance/payments" element={<PlaceholderPage title="To'lovlar" />} />
-          <Route path="finance/salaries" element={<PlaceholderPage title="Oyliklar" />} />
-          <Route path="finance/expenses" element={<PlaceholderPage title="Xarajatlar" />} />
-          <Route path="hr" element={<PlaceholderPage title="Kadrlar" />} />
-          <Route path="hr/staff" element={<PlaceholderPage title="Xodimlar" />} />
           <Route path="library" element={<PlaceholderPage title="Kutubxona" />} />
           <Route path="medical" element={<PlaceholderPage title="Tibbiyot" />} />
-          <Route path="reports" element={<PlaceholderPage title="Hisobotlar" />} />
           <Route path="announcements" element={<PlaceholderPage title="E'lonlar" />} />
           <Route path="messages" element={<PlaceholderPage title="Xabarlar" />} />
           <Route path="settings" element={<PlaceholderPage title="Sozlamalar" />} />
@@ -171,33 +237,33 @@ export default function App() {
 
       {/* ========== DEPUTY DIRECTOR ========== */}
       <Route element={<ProtectedRoute allowedRoles={['deputy_director']} />}>
-        <Route path="/deputy-director" element={<DashboardPlaceholder role="director" />}>
-          <Route index element={<PlaceholderPage title="O'rinbosar Dashboard" />} />
-          <Route path="students" element={<PlaceholderPage title="O'quvchilar" />} />
-          <Route path="teachers" element={<PlaceholderPage title="O'qituvchilar" />} />
-          <Route path="classes" element={<PlaceholderPage title="Sinflar" />} />
+        <Route path="/deputy-director" element={<DirectorLayout />}>
+          <Route index element={<DirectorDashboard />} />
+          <Route path="students" element={<DirectorStudentsPage />} />
+          <Route path="teachers" element={<DirectorTeachersPage />} />
+          <Route path="classes" element={<DirectorClassesPage />} />
+          <Route path="attendance" element={<DirectorAttendancePage />} />
+          <Route path="grades" element={<DirectorGradesPage />} />
+          <Route path="reports" element={<DirectorReportsPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Dars jadvali" />} />
-          <Route path="attendance" element={<PlaceholderPage title="Davomat" />} />
-          <Route path="grades" element={<PlaceholderPage title="Baholar" />} />
           <Route path="exams" element={<PlaceholderPage title="Imtihonlar" />} />
-          <Route path="reports" element={<PlaceholderPage title="Hisobotlar" />} />
           <Route path="profile" element={<PlaceholderPage title="Profil" />} />
         </Route>
       </Route>
 
       {/* ========== TEACHER ========== */}
       <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-        <Route path="/teacher" element={<DashboardPlaceholder role="teacher" />}>
-          <Route index element={<PlaceholderPage title="O'qituvchi Dashboard" />} />
-          <Route path="my-classes" element={<PlaceholderPage title="Mening sinflarim" />} />
-          <Route path="my-classes/:id" element={<PlaceholderPage title="Sinf" />} />
+        <Route path="/teacher" element={<TeacherLayout />}>
+          <Route index element={<TeacherDashboard />} />
+          <Route path="my-classes" element={<TeacherMyClassesPage />} />
+          <Route path="my-classes/:id" element={<TeacherMyClassesPage />} />
+          <Route path="attendance" element={<TeacherAttendancePage />} />
+          <Route path="attendance/:classId" element={<TeacherAttendancePage />} />
+          <Route path="grades" element={<TeacherGradesPage />} />
+          <Route path="grades/:classId" element={<TeacherGradesPage />} />
+          <Route path="homework" element={<TeacherHomeworkPage />} />
           <Route path="schedule" element={<PlaceholderPage title="Dars jadvali" />} />
-          <Route path="attendance" element={<PlaceholderPage title="Davomat" />} />
-          <Route path="attendance/:classId" element={<PlaceholderPage title="Sinf davomati" />} />
-          <Route path="grades" element={<PlaceholderPage title="Baholar" />} />
-          <Route path="grades/:classId" element={<PlaceholderPage title="Sinf baholari" />} />
           <Route path="exams" element={<PlaceholderPage title="Imtihonlar" />} />
-          <Route path="homework" element={<PlaceholderPage title="Uy vazifalari" />} />
           <Route path="students" element={<PlaceholderPage title="O'quvchilar" />} />
           <Route path="students/:id" element={<PlaceholderPage title="O'quvchi profili" />} />
           <Route path="messages" element={<PlaceholderPage title="Xabarlar" />} />
@@ -207,14 +273,14 @@ export default function App() {
 
       {/* ========== STUDENT ========== */}
       <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-        <Route path="/student" element={<DashboardPlaceholder role="student" />}>
-          <Route index element={<PlaceholderPage title="O'quvchi Dashboard" />} />
-          <Route path="schedule" element={<PlaceholderPage title="Dars jadvali" />} />
-          <Route path="grades" element={<PlaceholderPage title="Baholarim" />} />
+        <Route path="/student" element={<StudentLayout />}>
+          <Route index element={<StudentDashboard />} />
+          <Route path="schedule" element={<StudentSchedulePage />} />
+          <Route path="grades" element={<StudentGradesPage />} />
+          <Route path="homework" element={<StudentHomeworkPage />} />
+          <Route path="library" element={<StudentLibraryPage />} />
           <Route path="attendance" element={<PlaceholderPage title="Davomatim" />} />
-          <Route path="homework" element={<PlaceholderPage title="Uy vazifalari" />} />
           <Route path="exams" element={<PlaceholderPage title="Imtihonlar" />} />
-          <Route path="library" element={<PlaceholderPage title="Kutubxona" />} />
           <Route path="payments" element={<PlaceholderPage title="To'lovlar" />} />
           <Route path="messages" element={<PlaceholderPage title="Xabarlar" />} />
           <Route path="profile" element={<PlaceholderPage title="Profil" />} />
@@ -223,43 +289,39 @@ export default function App() {
 
       {/* ========== PARENT ========== */}
       <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
-        <Route path="/parent" element={<DashboardPlaceholder role="parent" />}>
-          <Route index element={<PlaceholderPage title="Ota-ona Dashboard" />} />
-          <Route path="children" element={<PlaceholderPage title="Farzandlarim" />} />
-          <Route path="children/:id" element={<PlaceholderPage title="Farzand profili" />} />
-          <Route path="children/:id/grades" element={<PlaceholderPage title="Baholar" />} />
-          <Route path="children/:id/attendance" element={<PlaceholderPage title="Davomat" />} />
-          <Route path="children/:id/homework" element={<PlaceholderPage title="Uy vazifalari" />} />
-          <Route path="payments" element={<PlaceholderPage title="To'lovlar" />} />
-          <Route path="messages" element={<PlaceholderPage title="Xabarlar" />} />
+        <Route path="/parent" element={<ParentLayout />}>
+          <Route index element={<ParentDashboard />} />
+          <Route path="children" element={<ChildrenPage />} />
+          <Route path="children/:id" element={<ChildrenPage />} />
+          <Route path="payments" element={<ParentPaymentsPage />} />
+          <Route path="messages" element={<ParentMessagesPage />} />
           <Route path="profile" element={<PlaceholderPage title="Profil" />} />
         </Route>
       </Route>
 
       {/* ========== ACCOUNTANT ========== */}
       <Route element={<ProtectedRoute allowedRoles={['accountant']} />}>
-        <Route path="/accountant" element={<DashboardPlaceholder role="accountant" />}>
-          <Route index element={<PlaceholderPage title="Hisobchi Dashboard" />} />
-          <Route path="payments" element={<PlaceholderPage title="To'lovlar" />} />
-          <Route path="payments/:id" element={<PlaceholderPage title="To'lov tafsilotlari" />} />
+        <Route path="/accountant" element={<AccountantLayout />}>
+          <Route index element={<AccountantDashboard />} />
+          <Route path="payments" element={<AccountantPaymentsPage />} />
+          <Route path="students-debt" element={<DebtsPage />} />
+          <Route path="invoices" element={<InvoicesPage />} />
           <Route path="salaries" element={<PlaceholderPage title="Oyliklar" />} />
           <Route path="expenses" element={<PlaceholderPage title="Xarajatlar" />} />
-          <Route path="invoices" element={<PlaceholderPage title="Hisob-fakturalar" />} />
           <Route path="reports" element={<PlaceholderPage title="Moliyaviy hisobotlar" />} />
-          <Route path="students-debt" element={<PlaceholderPage title="Qarzdorlar" />} />
           <Route path="profile" element={<PlaceholderPage title="Profil" />} />
         </Route>
       </Route>
 
       {/* ========== LIBRARIAN ========== */}
       <Route element={<ProtectedRoute allowedRoles={['librarian']} />}>
-        <Route path="/librarian" element={<DashboardPlaceholder role="librarian" />}>
-          <Route index element={<PlaceholderPage title="Kutubxonachi Dashboard" />} />
-          <Route path="books" element={<PlaceholderPage title="Kitoblar" />} />
-          <Route path="books/:id" element={<PlaceholderPage title="Kitob tafsilotlari" />} />
-          <Route path="issued" element={<PlaceholderPage title="Berilgan kitoblar" />} />
-          <Route path="returns" element={<PlaceholderPage title="Qaytarilgan kitoblar" />} />
-          <Route path="overdue" element={<PlaceholderPage title="Muddati o'tgan" />} />
+        <Route path="/librarian" element={<LibrarianLayout />}>
+          <Route index element={<LibrarianDashboard />} />
+          <Route path="books" element={<BooksPage />} />
+          <Route path="books/:id" element={<BooksPage />} />
+          <Route path="loans" element={<LoansPage />} />
+          <Route path="overdue" element={<OverduePage />} />
+          <Route path="interlibrary" element={<InterlibraryPage />} />
           <Route path="categories" element={<PlaceholderPage title="Kategoriyalar" />} />
           <Route path="reports" element={<PlaceholderPage title="Hisobotlar" />} />
           <Route path="profile" element={<PlaceholderPage title="Profil" />} />
@@ -268,11 +330,11 @@ export default function App() {
 
       {/* ========== MEDICAL ========== */}
       <Route element={<ProtectedRoute allowedRoles={['medical']} />}>
-        <Route path="/medical" element={<DashboardPlaceholder role="medical_staff" />}>
-          <Route index element={<PlaceholderPage title="Tibbiyot Dashboard" />} />
-          <Route path="records" element={<PlaceholderPage title="Tibbiy yozuvlar" />} />
-          <Route path="records/:id" element={<PlaceholderPage title="Tibbiy yozuv" />} />
-          <Route path="checkups" element={<PlaceholderPage title="Tibbiy ko'riklar" />} />
+        <Route path="/medical" element={<MedicalLayout />}>
+          <Route index element={<MedicalDashboard />} />
+          <Route path="records" element={<MedicalRecordsPage />} />
+          <Route path="checkups" element={<MedicalExamsPage />} />
+          <Route path="quarantine" element={<QuarantinePage />} />
           <Route path="incidents" element={<PlaceholderPage title="Hodisalar" />} />
           <Route path="vaccinations" element={<PlaceholderPage title="Emlashlar" />} />
           <Route path="reports" element={<PlaceholderPage title="Hisobotlar" />} />

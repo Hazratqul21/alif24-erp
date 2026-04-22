@@ -73,7 +73,7 @@ async def qr_checkin(
     db: AsyncSession = Depends(get_db),
 ):
     student = await db.execute(text("""
-        SELECT id, class_id FROM students WHERE student_code = :code AND deleted_at IS NULL
+        SELECT id, current_class_id FROM students WHERE student_id = :code AND status != 'deleted'
     """), {"code": data["qr_code"]})
     row = student.fetchone()
     if not row:
