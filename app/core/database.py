@@ -128,9 +128,29 @@ async def create_tenant_tables(tenant_id: int):
 
 
 async def init_public_schema():
-    """Create public schema tables (tenants, plans, central_books, etc.)."""
+    """Create public schema tables (tenants, plans, central_books, etc.)
+    and apply idempotent column additions for deployments whose tenants table
+    was created before those columns existed."""
     from app.models.public import tenant, plan, central_book, school_location  # noqa
 
     async with engine.begin() as conn:
         await conn.execute(text("SET search_path TO public"))
         await conn.run_sync(Base.metadata.create_all)
+
+        # Idempotent patches for already-deployed databases.
+        tenant_patches = [
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS domain VARCHAR(200) UNIQUE",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS schema_name VARCHAR(100) UNIQUE",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN NOT NULL DEFAULT false",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS admin_email VARCHAR(255)",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS admin_phone VARCHAR(30)",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS region VARCHAR(100)",
+            "ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ",
+            "ALTER TABLE public.tenants ALTER COLUMN subdomain DROP NOT NULL",
+        ]
+        for stmt in tenant_patches:
+            try:
+                await conn.execute(text(stmt))
+            except Exception:
+                # Column/constraint already in the desired state; safe to ignore.
+                pass
