@@ -62,4 +62,4 @@ def check_data_access(current_user: dict, resource_owner_id: str = None, class_i
     if resource_owner_id and current_user["id"] == resource_owner_id:
         return True
 
-    return True
+    return False

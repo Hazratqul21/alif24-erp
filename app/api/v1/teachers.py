@@ -11,7 +11,7 @@ router = APIRouter(tags=["Teachers"])
 
 
 @router.get("")
-@require_permission("teachers", "read")
+@require_permission("teachers", "view")
 async def list_teachers(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -82,7 +82,7 @@ async def create_teacher(
 
 
 @router.get("/{teacher_id}")
-@require_permission("teachers", "read")
+@require_permission("teachers", "view")
 async def get_teacher(
     teacher_id: int,
     current_user: dict = Depends(get_current_user),
@@ -139,7 +139,7 @@ async def update_teacher(
 
 
 @router.get("/{teacher_id}/schedule")
-@require_permission("teachers", "read")
+@require_permission("teachers", "view")
 async def teacher_schedule(
     teacher_id: int,
     current_user: dict = Depends(get_current_user),

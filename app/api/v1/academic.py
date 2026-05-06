@@ -12,7 +12,7 @@ router = APIRouter(tags=["Academic"])
 # --- Academic Years ---
 
 @router.get("/years")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def list_years(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -45,7 +45,7 @@ async def create_year(
 
 
 @router.get("/years/{year_id}")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def get_year(
     year_id: int,
     current_user: dict = Depends(get_current_user),
@@ -97,7 +97,7 @@ async def delete_year(
 # --- Classes ---
 
 @router.get("/classes")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def list_classes(
     year_id: Optional[int] = None,
     current_user: dict = Depends(get_current_user),
@@ -146,7 +146,7 @@ async def create_class(
 
 
 @router.get("/classes/{class_id}")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def get_class(
     class_id: int,
     current_user: dict = Depends(get_current_user),
@@ -205,7 +205,7 @@ async def delete_class(
 # --- Subjects ---
 
 @router.get("/subjects")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def list_subjects(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -267,7 +267,7 @@ async def delete_subject(
 # --- Class Students ---
 
 @router.get("/classes/{class_id}/students")
-@require_permission("academic", "read")
+@require_permission("academic", "view")
 async def class_students(
     class_id: int,
     current_user: dict = Depends(get_current_user),

@@ -11,7 +11,7 @@ router = APIRouter(tags=["Holidays"])
 
 
 @router.get("")
-@require_permission("holidays", "read")
+@require_permission("holidays", "view")
 async def list_holidays(
     year: Optional[int] = None,
     current_user: dict = Depends(get_current_user),
@@ -53,7 +53,7 @@ async def create_holiday(
 
 
 @router.get("/{holiday_id}")
-@require_permission("holidays", "read")
+@require_permission("holidays", "view")
 async def get_holiday(
     holiday_id: int,
     current_user: dict = Depends(get_current_user),

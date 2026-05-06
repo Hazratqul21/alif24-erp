@@ -13,7 +13,7 @@ router = APIRouter(tags=["Portfolio"])
 # --- Student Portfolio ---
 
 @router.get("/students")
-@require_permission("portfolio", "read")
+@require_permission("portfolio", "view")
 async def list_student_portfolios(
     student_id: Optional[int] = None,
     page: int = Query(1, ge=1),
@@ -62,7 +62,7 @@ async def create_student_portfolio(
 
 
 @router.get("/students/{item_id}")
-@require_permission("portfolio", "read")
+@require_permission("portfolio", "view")
 async def get_student_portfolio(
     item_id: int,
     current_user: dict = Depends(get_current_user),
@@ -120,7 +120,7 @@ async def delete_student_portfolio(
 # --- Teacher Development ---
 
 @router.get("/teachers")
-@require_permission("portfolio", "read")
+@require_permission("portfolio", "view")
 async def list_teacher_development(
     teacher_id: Optional[int] = None,
     page: int = Query(1, ge=1),
@@ -172,7 +172,7 @@ async def create_teacher_development(
 
 
 @router.get("/teachers/{item_id}")
-@require_permission("portfolio", "read")
+@require_permission("portfolio", "view")
 async def get_teacher_development(
     item_id: int,
     current_user: dict = Depends(get_current_user),

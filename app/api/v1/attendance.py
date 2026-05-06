@@ -91,7 +91,7 @@ async def qr_checkin(
 
 
 @router.get("/class/{class_id}/date/{date}")
-@require_permission("attendance", "read")
+@require_permission("attendance", "view")
 async def class_attendance_by_date(
     class_id: int,
     date: str,
@@ -110,7 +110,7 @@ async def class_attendance_by_date(
 
 
 @router.get("/student/{student_id}/monthly")
-@require_permission("attendance", "read")
+@require_permission("attendance", "view")
 async def student_monthly(
     student_id: int,
     month: int = Query(..., ge=1, le=12),
@@ -139,7 +139,7 @@ async def student_monthly(
 
 
 @router.get("/reports")
-@require_permission("attendance", "read")
+@require_permission("attendance", "view")
 async def attendance_reports(
     class_id: Optional[int] = None,
     month: Optional[int] = None,

@@ -101,7 +101,7 @@ function DashboardPlaceholder({ role }) {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-600">
-            {user?.full_name || user?.email || role}
+            {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || user?.email || role}
           </span>
           <button
             onClick={handleLogout}
@@ -117,6 +117,37 @@ function DashboardPlaceholder({ role }) {
     </div>
   );
 }
+
+// Backend rol nomlarini frontend route-larga mapping
+// Backend da "medical_staff", "administrator", "deputy_academic" kabi nomlar ishlatiladi
+const ROLE_TO_ROUTE = {
+  super_admin: '/superadmin',
+  superadmin: '/superadmin',
+  director: '/director',
+  administrator: '/director',           // administrator → direktor UI
+  deputy_director: '/deputy-director',
+  deputy_academic: '/deputy-director',  // o'quv ishlari bo'yicha
+  deputy_discipline: '/deputy-director',// tarbiyaviy ishlar bo'yicha
+  deputy_finance: '/deputy-director',   // moliya bo'yicha
+  teacher: '/teacher',
+  class_teacher: '/teacher',            // sinf rahbari → o'qituvchi UI
+  department_head: '/teacher',          // fan yo'nalishi rahbari → o'qituvchi UI
+  student: '/student',
+  alumni: '/student',                   // bitiruvchi → o'quvchi UI
+  parent: '/parent',
+  parent_council: '/parent',            // ota-onalar kengashi → ota-ona UI
+  accountant: '/accountant',
+  librarian: '/librarian',
+  medical_staff: '/medical',            // backend nomi
+  medical: '/medical',                  // alias
+  psychologist: '/psychologist',
+  it_admin: '/it-admin',
+  security: '/security',
+  hr: '/hr',
+  receptionist: '/receptionist',
+  canteen_manager: '/canteen',
+  transport_manager: '/transport',
+};
 
 // --- Protected Route Wrapper ---
 function ProtectedRoute({ allowedRoles }) {
@@ -140,16 +171,9 @@ function ProtectedRoute({ allowedRoles }) {
     const hasRole = allowedRoles.some(r => userRoles.includes(r));
     if (!hasRole) {
       const primaryRole = userRoles[0];
-      if (!primaryRole) {
-        return <Navigate to="/login" replace />;
-      }
-      const fallbackRoutes = {
-        super_admin: '/superadmin',
-        superadmin: '/superadmin',
-        deputy_director: '/deputy-director',
-        it_admin: '/it-admin',
-      };
-      return <Navigate to={fallbackRoutes[primaryRole] || `/${primaryRole}`} replace />;
+      if (!primaryRole) return <Navigate to="/login" replace />;
+      const target = ROLE_TO_ROUTE[primaryRole] || '/login';
+      return <Navigate to={target} replace />;
     }
   }
 
@@ -173,25 +197,7 @@ function RoleRedirect() {
 
   const roles = (user.roles || [user.role]).filter(Boolean).map(r => r.toLowerCase());
   const role = roles[0];
-  const roleRoutes = {
-    super_admin: '/superadmin',
-    superadmin: '/superadmin',
-    director: '/director',
-    deputy_director: '/deputy-director',
-    teacher: '/teacher',
-    student: '/student',
-    parent: '/parent',
-    accountant: '/accountant',
-    librarian: '/librarian',
-    medical: '/medical',
-    hr: '/hr',
-    receptionist: '/receptionist',
-    security: '/security',
-    it_admin: '/it-admin',
-    psychologist: '/psychologist',
-  };
-
-  return <Navigate to={roleRoutes[role] || '/login'} replace />;
+  return <Navigate to={ROLE_TO_ROUTE[role] || '/login'} replace />;
 }
 
 // --- Main App ---
@@ -220,7 +226,7 @@ export default function App() {
       </Route>
 
       {/* ========== DIRECTOR ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['director']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['director', 'administrator']} />}>
         <Route path="/director" element={<DirectorLayout />}>
           <Route index element={<DirectorDashboard />} />
           <Route path="students" element={<DirectorStudentsPage />} />
@@ -247,7 +253,7 @@ export default function App() {
       </Route>
 
       {/* ========== DEPUTY DIRECTOR ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['deputy_director']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['deputy_director', 'deputy_academic', 'deputy_discipline', 'deputy_finance']} />}>
         <Route path="/deputy-director" element={<DirectorLayout />}>
           <Route index element={<DirectorDashboard />} />
           <Route path="students" element={<DirectorStudentsPage />} />
@@ -263,7 +269,7 @@ export default function App() {
       </Route>
 
       {/* ========== TEACHER ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['teacher', 'class_teacher', 'department_head']} />}>
         <Route path="/teacher" element={<TeacherLayout />}>
           <Route index element={<TeacherDashboard />} />
           <Route path="my-classes" element={<TeacherMyClassesPage />} />
@@ -283,7 +289,7 @@ export default function App() {
       </Route>
 
       {/* ========== STUDENT ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['student', 'alumni']} />}>
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<StudentDashboard />} />
           <Route path="schedule" element={<StudentSchedulePage />} />
@@ -299,7 +305,7 @@ export default function App() {
       </Route>
 
       {/* ========== PARENT ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['parent', 'parent_council']} />}>
         <Route path="/parent" element={<ParentLayout />}>
           <Route index element={<ParentDashboard />} />
           <Route path="children" element={<ChildrenPage />} />
@@ -340,7 +346,7 @@ export default function App() {
       </Route>
 
       {/* ========== MEDICAL ========== */}
-      <Route element={<ProtectedRoute allowedRoles={['medical']} />}>
+      <Route element={<ProtectedRoute allowedRoles={['medical', 'medical_staff']} />}>
         <Route path="/medical" element={<MedicalLayout />}>
           <Route index element={<MedicalDashboard />} />
           <Route path="records" element={<MedicalRecordsPage />} />

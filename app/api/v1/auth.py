@@ -355,9 +355,32 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
+    user_id = current_user["id"]
+
+    # Super Admin — public.super_admins jadvalidagi parolni o'zgartirish
+    if str(user_id).startswith("sa_"):
+        sa_id = int(str(user_id).replace("sa_", ""))
+        result = await db.execute(
+            text("SELECT password_hash FROM public.super_admins WHERE id = :uid"),
+            {"uid": sa_id},
+        )
+        row = result.fetchone()
+        if not row:
+            raise NotFoundError("Super Admin")
+        if not verify_password(body.old_password, row[0]):
+            raise ValidationError("Joriy parol noto'g'ri")
+        new_hash = hash_password(body.new_password)
+        await db.execute(
+            text("UPDATE public.super_admins SET password_hash = :ph WHERE id = :uid"),
+            {"ph": new_hash, "uid": sa_id},
+        )
+        await db.commit()
+        return {"detail": "Parol muvaffaqiyatli o'zgartirildi"}
+
+    # Tenant foydalanuvchi
     result = await db.execute(
         text("SELECT password_hash FROM users WHERE id = :uid"),
-        {"uid": current_user["id"]},
+        {"uid": user_id},
     )
     row = result.fetchone()
     if not row:
@@ -369,7 +392,7 @@ async def change_password(
     new_hash = hash_password(body.new_password)
     await db.execute(
         text("UPDATE users SET password_hash = :ph, updated_at = NOW() WHERE id = :uid"),
-        {"ph": new_hash, "uid": current_user["id"]},
+        {"ph": new_hash, "uid": user_id},
     )
     await db.commit()
 

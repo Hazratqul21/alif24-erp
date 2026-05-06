@@ -44,7 +44,7 @@ async def submit_application(
 
 
 @router.get("")
-@require_permission("admissions", "read")
+@require_permission("admissions", "view")
 async def list_applications(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -70,7 +70,7 @@ async def list_applications(
 
 
 @router.get("/{app_id}")
-@require_permission("admissions", "read")
+@require_permission("admissions", "view")
 async def get_application(
     app_id: int,
     current_user: dict = Depends(get_current_user),

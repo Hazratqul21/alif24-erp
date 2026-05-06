@@ -24,7 +24,7 @@ SCHEDULE_SELECT = """
 
 
 @router.get("/class/{class_id}")
-@require_permission("schedules", "read")
+@require_permission("schedules", "view")
 async def class_schedule(
     class_id: int,
     current_user: dict = Depends(get_current_user),
@@ -38,7 +38,7 @@ async def class_schedule(
 
 
 @router.get("/teacher/{teacher_id}")
-@require_permission("schedules", "read")
+@require_permission("schedules", "view")
 async def teacher_schedule(
     teacher_id: int,
     current_user: dict = Depends(get_current_user),
@@ -52,7 +52,7 @@ async def teacher_schedule(
 
 
 @router.get("/student/{student_id}")
-@require_permission("schedules", "read")
+@require_permission("schedules", "view")
 async def student_schedule(
     student_id: int,
     current_user: dict = Depends(get_current_user),
@@ -71,7 +71,7 @@ async def student_schedule(
 
 
 @router.get("/today")
-@require_permission("schedules", "read")
+@require_permission("schedules", "view")
 async def today_schedule(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

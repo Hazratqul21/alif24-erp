@@ -11,7 +11,7 @@ router = APIRouter(tags=["Payments"])
 
 
 @router.get("/student/{student_id}")
-@require_permission("payments", "read")
+@require_permission("payments", "view")
 async def student_payments(
     student_id: str,
     current_user: dict = Depends(get_current_user),
@@ -27,7 +27,7 @@ async def student_payments(
 
 
 @router.get("/debts")
-@require_permission("payments", "read")
+@require_permission("payments", "view")
 async def outstanding_debts(
     class_id: Optional[int] = None,
     current_user: dict = Depends(get_current_user),
@@ -143,7 +143,7 @@ async def click_callback(
 
 
 @router.get("/invoices/{invoice_id}/pdf")
-@require_permission("payments", "read")
+@require_permission("payments", "view")
 async def download_invoice(
     invoice_id: int,
     current_user: dict = Depends(get_current_user),
@@ -193,7 +193,7 @@ async def send_reminder(
 # --- Payment Plans ---
 
 @router.get("/plans")
-@require_permission("payments", "read")
+@require_permission("payments", "view")
 async def list_plans(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -261,7 +261,7 @@ async def delete_plan(
 # --- Fees ---
 
 @router.get("/fees")
-@require_permission("payments", "read")
+@require_permission("payments", "view")
 async def list_fees(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -13,7 +13,7 @@ router = APIRouter(tags=["Transport"])
 # --- Buses ---
 
 @router.get("/buses")
-@require_permission("transport", "read")
+@require_permission("transport", "view")
 async def list_buses(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -87,7 +87,7 @@ async def delete_bus(
 # --- Stops ---
 
 @router.get("/stops")
-@require_permission("transport", "read")
+@require_permission("transport", "view")
 async def list_stops(
     bus_id: Optional[int] = None,
     current_user: dict = Depends(get_current_user),
@@ -168,7 +168,7 @@ async def delete_stop(
 # --- Subscriptions ---
 
 @router.get("/subscriptions")
-@require_permission("transport", "read")
+@require_permission("transport", "view")
 async def list_subscriptions(
     bus_id: Optional[int] = None,
     current_user: dict = Depends(get_current_user),
@@ -269,7 +269,7 @@ async def record_position(
 
 
 @router.get("/tracking/{bus_id}/latest")
-@require_permission("transport", "read")
+@require_permission("transport", "view")
 async def latest_position(
     bus_id: int,
     current_user: dict = Depends(get_current_user),

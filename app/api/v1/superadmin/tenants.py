@@ -6,6 +6,8 @@ from typing import Optional
 from app.core.dependencies import get_public_db, get_current_user
 from app.core.rbac import require_role
 from app.core.exceptions import NotFoundError, AppError
+from app.core.database import create_tenant_tables
+from app.models.tenant.role import DEFAULT_ROLES, DEFAULT_PERMISSIONS
 
 router = APIRouter(tags=["SuperAdmin - Tenants"])
 
@@ -64,25 +66,58 @@ async def create_tenant(
 ):
     schema_name = data.get("schema_name", f"tenant_{data['name'].lower().replace(' ', '_')}")
 
+    # schema_name har doim tenant_{id} formatida bo'lishi kerak (middleware shu formatni ishlatadi)
+    # Avval tenantni yaratamiz, keyin ID bo'yicha schema_name aniqlaymiz
     row = await db.execute(text("""
         INSERT INTO tenants (name, domain, schema_name, is_active, plan_id, subscription_end,
                              admin_email, admin_phone, address, region)
-        VALUES (:name, :domain, :schema_name, true, :plan_id, :subscription_end,
+        VALUES (:name, :domain, :schema_name_placeholder, true, :plan_id, :subscription_end,
                 :admin_email, :admin_phone, :address, :region)
         RETURNING id
     """), {
         "name": data["name"], "domain": data.get("domain"),
-        "schema_name": schema_name, "plan_id": data.get("plan_id"),
+        "schema_name_placeholder": schema_name,
+        "plan_id": data.get("plan_id"),
         "subscription_end": data.get("subscription_end"),
         "admin_email": data.get("admin_email"), "admin_phone": data.get("admin_phone"),
         "address": data.get("address"), "region": data.get("region"),
     })
     tenant_id = row.scalar()
 
-    await db.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name}"))
+    # schema_name har doim tenant_{id} bo'lishi kerak (middleware shu formatni ishlatadi)
+    final_schema = f"tenant_{tenant_id}"
+    await db.execute(text(f"UPDATE tenants SET schema_name = :sn WHERE id = :id"),
+                     {"sn": final_schema, "id": tenant_id})
+
+    # 1. Schema yaratish
+    await db.execute(text(f"CREATE SCHEMA IF NOT EXISTS {final_schema}"))
+    await db.flush()
+
+    # 2. Barcha jadvallarni yaratish
+    await create_tenant_tables(tenant_id)
+
+    # 3. Default rollar va ruxsatlarni seed qilish
+    for role_data in DEFAULT_ROLES:
+        await db.execute(text(
+            f"INSERT INTO {final_schema}.roles (name, display_name, level, is_system) "
+            f"VALUES (:name, :display_name, :level, :is_system) "
+            f"ON CONFLICT (name) DO NOTHING"
+        ), role_data)
+
+    for perm_data in DEFAULT_PERMISSIONS:
+        await db.execute(text(
+            f"INSERT INTO {final_schema}.permissions (name, module, action) "
+            f"VALUES (:name, :module, :action) "
+            f"ON CONFLICT (name) DO NOTHING"
+        ), perm_data)
+
     await db.commit()
 
-    return {"id": tenant_id, "schema_name": schema_name, "message": "Tenant yaratildi va schema tayyorlandi"}
+    return {
+        "id": tenant_id,
+        "schema_name": final_schema,
+        "message": "Tenant yaratildi, jadvallar va default rollar tayyorlandi",
+    }
 
 
 @router.get("/{tenant_id}")

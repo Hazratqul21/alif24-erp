@@ -11,7 +11,7 @@ router = APIRouter(tags=["Library"])
 
 
 @router.get("/books")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def search_books(
     search: Optional[str] = None,
     category: Optional[str] = None,
@@ -69,7 +69,7 @@ async def add_book(
 
 
 @router.get("/central")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def search_central(
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
@@ -166,7 +166,7 @@ async def return_book(
 
 
 @router.get("/loans/overdue")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def overdue_loans(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -186,7 +186,7 @@ async def overdue_loans(
 
 
 @router.get("/stats")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def library_stats(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -203,7 +203,7 @@ async def library_stats(
 
 
 @router.get("/export")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def export_books(
     current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -218,7 +218,7 @@ async def export_books(
 
 
 @router.get("/interlibrary/nearby")
-@require_permission("library", "read")
+@require_permission("library", "view")
 async def nearby_schools(
     current_user: dict = Depends(get_current_user),
     alif_db: AsyncSession = Depends(get_alif24_db),

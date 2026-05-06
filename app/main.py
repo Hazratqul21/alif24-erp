@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 import logging
 import sentry_sdk
 
-from app.config import settings
+from app.config import settings, validate_production_config
 from app.core.database import init_public_schema
 from app.core.tenant import TenantMiddleware
 from app.core.exceptions import AppError
@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_production_config()
     logger.info("Alif24 School ERP ishga tushmoqda...")
     await init_public_schema()
     logger.info("Public schema tayyor")

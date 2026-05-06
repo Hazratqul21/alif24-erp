@@ -11,7 +11,7 @@ router = APIRouter(tags=["Discipline"])
 
 
 @router.get("")
-@require_permission("discipline", "read")
+@require_permission("discipline", "view")
 async def list_incidents(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -61,7 +61,7 @@ async def create_incident(
 
 
 @router.get("/{incident_id}")
-@require_permission("discipline", "read")
+@require_permission("discipline", "view")
 async def get_incident(
     incident_id: int,
     current_user: dict = Depends(get_current_user),
@@ -117,7 +117,7 @@ async def delete_incident(
 
 
 @router.get("/student/{student_id}")
-@require_permission("discipline", "read")
+@require_permission("discipline", "view")
 async def student_discipline(
     student_id: int,
     current_user: dict = Depends(get_current_user),

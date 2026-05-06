@@ -69,3 +69,23 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+_INSECURE_JWT_DEFAULT = "change-me-to-a-random-64-char-string"
+_INSECURE_SUPER_ADMIN_DEFAULT = "change-me"
+
+
+def validate_production_config() -> None:
+    """Production muhitida xavfsizlik tekshiruvi.
+    Bu funksiya faqat uvicorn ishga tushganda chaqiriladi (alembic import paytida emas).
+    """
+    if settings.APP_ENV != "production":
+        return
+    problems = []
+    if settings.JWT_SECRET_KEY == _INSECURE_JWT_DEFAULT or len(settings.JWT_SECRET_KEY) < 32:
+        problems.append("JWT_SECRET_KEY must be set to a strong random value (>=32 chars)")
+    if settings.SUPER_ADMIN_PASSWORD == _INSECURE_SUPER_ADMIN_DEFAULT or len(settings.SUPER_ADMIN_PASSWORD) < 10:
+        problems.append("SUPER_ADMIN_PASSWORD must be set (>=10 chars)")
+    if problems:
+        raise RuntimeError(
+            "Insecure configuration in production: " + "; ".join(problems)
+        )

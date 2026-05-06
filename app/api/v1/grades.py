@@ -98,7 +98,7 @@ async def my_grades(
 
 
 @router.get("/student/{student_id}")
-@require_permission("grades", "read")
+@require_permission("grades", "view")
 async def student_grades(
     student_id: int,
     subject_id: Optional[int] = None,
@@ -130,7 +130,7 @@ async def student_grades(
 
 
 @router.get("/class/{class_id}/subject/{subject_id}")
-@require_permission("grades", "read")
+@require_permission("grades", "view")
 async def class_subject_grades(
     class_id: int,
     subject_id: int,
@@ -153,7 +153,7 @@ async def class_subject_grades(
 
 
 @router.get("/reports/ranking")
-@require_permission("grades", "read")
+@require_permission("grades", "view")
 async def ranking(
     class_id: Optional[int] = None,
     limit: int = Query(50, ge=1, le=200),
@@ -183,7 +183,7 @@ async def ranking(
 
 
 @router.get("/report-cards/student/{student_id}")
-@require_permission("grades", "read")
+@require_permission("grades", "view")
 async def student_report_card(
     student_id: int,
     current_user: dict = Depends(get_current_user),

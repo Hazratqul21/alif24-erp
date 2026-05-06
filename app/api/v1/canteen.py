@@ -13,7 +13,7 @@ router = APIRouter(tags=["Canteen"])
 # --- Menu Items ---
 
 @router.get("/menu-items")
-@require_permission("canteen", "read")
+@require_permission("canteen", "view")
 async def list_menu_items(
     category: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
@@ -92,7 +92,7 @@ async def delete_menu_item(
 # --- Daily Menu ---
 
 @router.get("/daily-menu")
-@require_permission("canteen", "read")
+@require_permission("canteen", "view")
 async def list_daily_menu(
     date: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
@@ -190,7 +190,7 @@ async def place_order(
 
 
 @router.get("/orders/student/{student_id}")
-@require_permission("canteen", "read")
+@require_permission("canteen", "view")
 async def student_orders(
     student_id: int,
     current_user: dict = Depends(get_current_user),
@@ -209,7 +209,7 @@ async def student_orders(
 # --- Dietary Restrictions ---
 
 @router.get("/dietary-restrictions")
-@require_permission("canteen", "read")
+@require_permission("canteen", "view")
 async def list_restrictions(
     student_id: Optional[int] = None,
     current_user: dict = Depends(get_current_user),

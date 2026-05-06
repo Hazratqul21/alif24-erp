@@ -11,7 +11,7 @@ router = APIRouter(tags=["Parents"])
 
 
 @router.get("")
-@require_permission("parents", "read")
+@require_permission("parents", "view")
 async def list_parents(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -70,7 +70,7 @@ async def create_parent(
 
 
 @router.get("/{parent_id}")
-@require_permission("parents", "read")
+@require_permission("parents", "view")
 async def get_parent(
     parent_id: int,
     current_user: dict = Depends(get_current_user),
@@ -98,7 +98,7 @@ async def get_parent(
 
 
 @router.get("/{parent_id}/children")
-@require_permission("parents", "read")
+@require_permission("parents", "view")
 async def list_children(
     parent_id: int,
     current_user: dict = Depends(get_current_user),

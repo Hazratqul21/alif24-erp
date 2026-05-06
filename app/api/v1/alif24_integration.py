@@ -30,7 +30,7 @@ router = APIRouter(tags=["Alif24 Integration"])
 
 
 @router.get("/lookup/{alif24_id}")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def lookup_user(
     alif24_id: str,
     current_user: dict = Depends(get_current_user),
@@ -46,7 +46,7 @@ async def lookup_user(
 
 
 @router.get("/search")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def search_users(
     q: str = Query(..., min_length=2, description="Ism, telefon, email yoki ID"),
     role: Optional[str] = Query(None, description="student, teacher, parent"),
@@ -148,7 +148,7 @@ async def bulk_import_students(
 
 
 @router.get("/results/{erp_user_id}")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def get_alif24_results(
     erp_user_id: str,
     current_user: dict = Depends(get_current_user),

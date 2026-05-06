@@ -11,7 +11,7 @@ router = APIRouter(tags=["Students"])
 
 
 @router.get("")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def list_students(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -106,7 +106,7 @@ async def create_student(
 
 
 @router.get("/{student_id}")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def get_student(
     student_id: int,
     current_user: dict = Depends(get_current_user),
@@ -203,7 +203,7 @@ async def delete_student(
 
 
 @router.get("/{student_id}/grades")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def student_grades(
     student_id: int,
     current_user: dict = Depends(get_current_user),
@@ -223,7 +223,7 @@ async def student_grades(
 
 
 @router.get("/{student_id}/attendance")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def student_attendance(
     student_id: int,
     month: Optional[int] = None,
@@ -247,7 +247,7 @@ async def student_attendance(
 
 
 @router.get("/{student_id}/schedule")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def student_schedule(
     student_id: int,
     current_user: dict = Depends(get_current_user),
@@ -274,7 +274,7 @@ async def student_schedule(
 
 
 @router.get("/{student_id}/payments")
-@require_permission("students", "read")
+@require_permission("students", "view")
 async def student_payments(
     student_id: int,
     current_user: dict = Depends(get_current_user),

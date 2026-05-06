@@ -11,7 +11,7 @@ router = APIRouter(tags=["Surveys"])
 
 
 @router.get("")
-@require_permission("surveys", "read")
+@require_permission("surveys", "view")
 async def list_surveys(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -64,7 +64,7 @@ async def create_survey(
 
 
 @router.get("/{survey_id}")
-@require_permission("surveys", "read")
+@require_permission("surveys", "view")
 async def get_survey(
     survey_id: int,
     current_user: dict = Depends(get_current_user),
@@ -148,7 +148,7 @@ async def submit_response(
 
 
 @router.get("/{survey_id}/results")
-@require_permission("surveys", "read")
+@require_permission("surveys", "view")
 async def survey_results(
     survey_id: int,
     current_user: dict = Depends(get_current_user),

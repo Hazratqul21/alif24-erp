@@ -11,7 +11,7 @@ router = APIRouter(tags=["Homework"])
 
 
 @router.get("")
-@require_permission("homework", "read")
+@require_permission("homework", "view")
 async def list_homework(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -68,7 +68,7 @@ async def create_homework(
 
 
 @router.get("/{hw_id}")
-@require_permission("homework", "read")
+@require_permission("homework", "view")
 async def get_homework(
     hw_id: int,
     current_user: dict = Depends(get_current_user),

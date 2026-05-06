@@ -11,7 +11,7 @@ router = APIRouter(tags=["Rooms"])
 
 
 @router.get("")
-@require_permission("rooms", "read")
+@require_permission("rooms", "view")
 async def list_rooms(
     room_type: Optional[str] = None,
     current_user: dict = Depends(get_current_user),
@@ -53,7 +53,7 @@ async def create_room(
 
 
 @router.get("/{room_id}")
-@require_permission("rooms", "read")
+@require_permission("rooms", "view")
 async def get_room(
     room_id: int,
     current_user: dict = Depends(get_current_user),
@@ -140,7 +140,7 @@ async def book_room(
 
 
 @router.get("/bookings/date/{date}")
-@require_permission("rooms", "read")
+@require_permission("rooms", "view")
 async def bookings_by_date(
     date: str,
     current_user: dict = Depends(get_current_user),

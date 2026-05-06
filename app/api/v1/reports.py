@@ -17,15 +17,15 @@ async def director_dashboard(
 ):
     stats = await db.execute(text("""
         SELECT
-            (SELECT COUNT(*) FROM students WHERE deleted_at IS NULL) as total_students,
+            (SELECT COUNT(*) FROM students WHERE status != 'deleted') as total_students,
             (SELECT COUNT(*) FROM teachers WHERE deleted_at IS NULL) as total_teachers,
             (SELECT COUNT(*) FROM classes) as total_classes,
-            (SELECT COUNT(*) FROM users WHERE is_active = true) as active_users,
-            (SELECT ROUND(AVG(g.score), 1) FROM grades g) as avg_grade,
-            (SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'present') as today_present,
-            (SELECT COUNT(*) FROM attendance WHERE date = CURRENT_DATE AND status = 'absent') as today_absent,
+            (SELECT COUNT(*) FROM users WHERE is_active = true AND deleted_at IS NULL) as active_users,
+            (SELECT ROUND(AVG(g.grade_value), 1) FROM grades g) as avg_grade,
+            (SELECT COUNT(*) FROM attendance WHERE attendance_date = CURRENT_DATE AND status = 'present') as today_present,
+            (SELECT COUNT(*) FROM attendance WHERE attendance_date = CURRENT_DATE AND status = 'absent') as today_absent,
             (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'paid'
-                AND EXTRACT(MONTH FROM paid_at) = EXTRACT(MONTH FROM CURRENT_DATE)) as monthly_revenue
+                AND EXTRACT(MONTH FROM payment_date) = EXTRACT(MONTH FROM CURRENT_DATE)) as monthly_revenue
     """))
     return dict(stats.fetchone()._mapping)
 
@@ -61,8 +61,8 @@ async def teacher_dashboard(
 
     recent_grades = await db.execute(text("""
         SELECT COUNT(*) as total_grades,
-               ROUND(AVG(score), 1) as avg_score
-        FROM grades WHERE teacher_id = :tid AND graded_at > CURRENT_DATE - INTERVAL '30 days'
+               ROUND(AVG(grade_value), 1) as avg_score
+        FROM grades WHERE teacher_id = :tid AND grade_date > CURRENT_DATE - INTERVAL '30 days'
     """), {"tid": teacher_id})
 
     return {
@@ -116,19 +116,18 @@ async def financial_report(
     conditions = ["p.status = 'paid'"]
     params: dict = {}
     if month:
-        conditions.append("EXTRACT(MONTH FROM p.paid_at) = :month")
+        conditions.append("EXTRACT(MONTH FROM p.payment_date) = :month")
         params["month"] = month
     if year:
-        conditions.append("EXTRACT(YEAR FROM p.paid_at) = :year")
+        conditions.append("EXTRACT(YEAR FROM p.payment_date) = :year")
         params["year"] = year
 
     where = "WHERE " + " AND ".join(conditions)
 
     revenue = await db.execute(text(f"""
-        SELECT COALESCE(SUM(p.amount), 0) as total_revenue,
-               COUNT(*) as total_payments,
-               p.payment_method, COUNT(*) as count_per_method,
-               SUM(p.amount) as amount_per_method
+        SELECT p.payment_method,
+               COUNT(*) as count_per_method,
+               COALESCE(SUM(p.amount), 0) as amount_per_method
         FROM payments p {where}
         GROUP BY p.payment_method
     """), params)
@@ -139,7 +138,7 @@ async def financial_report(
         FROM students s
         CROSS JOIN fees f
         LEFT JOIN payments p ON p.student_id = s.id AND p.fee_id = f.id AND p.status = 'paid'
-        WHERE s.deleted_at IS NULL
+        WHERE s.status != 'deleted'
         GROUP BY s.id, f.id
         HAVING f.amount - COALESCE(SUM(p.amount), 0) > 0
     """))
@@ -151,7 +150,7 @@ async def financial_report(
 
 
 @router.get("/attendance-summary")
-@require_permission("reports", "read")
+@require_permission("reports", "view")
 async def attendance_summary(
     month: Optional[int] = None,
     year: Optional[int] = None,
@@ -161,10 +160,10 @@ async def attendance_summary(
     conditions = []
     params: dict = {}
     if month:
-        conditions.append("EXTRACT(MONTH FROM a.date) = :month")
+        conditions.append("EXTRACT(MONTH FROM a.attendance_date) = :month")
         params["month"] = month
     if year:
-        conditions.append("EXTRACT(YEAR FROM a.date) = :year")
+        conditions.append("EXTRACT(YEAR FROM a.attendance_date) = :year")
         params["year"] = year
 
     where = "WHERE " + " AND ".join(conditions) if conditions else ""
@@ -177,7 +176,8 @@ async def attendance_summary(
                COUNT(*) FILTER (WHERE a.status = 'late') as late,
                ROUND(100.0 * COUNT(*) FILTER (WHERE a.status = 'present') / NULLIF(COUNT(*), 0), 1) as attendance_rate
         FROM attendance a
-        JOIN classes c ON c.id = a.class_id
+        JOIN students s ON s.id = a.student_id
+        LEFT JOIN classes c ON c.id = s.current_class_id
         {where}
         GROUP BY c.name ORDER BY c.name
     """), params)
@@ -207,11 +207,11 @@ async def custom_report(
             where += " AND " + " AND ".join(conditions)
 
         rows = await db.execute(text(f"""
-            SELECT s.id, s.student_code, u.first_name, u.last_name, u.phone,
+            SELECT s.id, s.student_id as student_code, u.first_name, u.last_name, u.phone,
                    c.name as class_name, s.created_at
             FROM students s
             JOIN users u ON u.id = s.user_id
-            LEFT JOIN classes c ON c.id = s.class_id
+            LEFT JOIN classes c ON c.id = s.current_class_id
             {where} ORDER BY u.last_name
         """), params)
         return {"report_type": report_type, "data": [dict(r._mapping) for r in rows]}

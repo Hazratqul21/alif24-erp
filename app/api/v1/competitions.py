@@ -11,7 +11,7 @@ router = APIRouter(tags=["Competitions"])
 
 
 @router.get("")
-@require_permission("competitions", "read")
+@require_permission("competitions", "view")
 async def list_competitions(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -62,7 +62,7 @@ async def create_competition(
 
 
 @router.get("/{comp_id}")
-@require_permission("competitions", "read")
+@require_permission("competitions", "view")
 async def get_competition(
     comp_id: int,
     current_user: dict = Depends(get_current_user),
@@ -177,7 +177,7 @@ async def update_results(
 # --- Events ---
 
 @router.get("/events")
-@require_permission("competitions", "read")
+@require_permission("competitions", "view")
 async def list_events(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
